@@ -11,7 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export interface ITableFilterBar {
+export interface IFilterBar {
     object: string;
     name: string;
     isControl: boolean;
@@ -26,22 +26,16 @@ export interface FilterBarElement extends DataField {
     dynamic?: boolean;
 }
 
-interface TableFilterBarProps {
-    bar: ITableFilterBar
+interface FilterBarProps {
+    bar: IFilterBar
     dataTable: string
     dataTables: Record<string, DataTable>
     mappingDict?: MappingDict
     onSearch?: (params: { filters: string[]; filterValues: Record<string, any> }) => void
 }
 
-export function TableFilterBar({
-    bar,
-    dataTable,
-    dataTables,
-    mappingDict,
-    onSearch
-}: TableFilterBarProps) {
-    // 从 dataTable 中找出标记了 isFilter 字段，并设置为可动态的
+
+export function FilterBar({ bar, dataTable, dataTables, mappingDict, onSearch }: FilterBarProps) {
     const fields: Map<string, DataField> = new Map()
     const filterComps: Map<string, FilterBarElement> = new Map()
     dataTables[dataTable].fields.forEach((item) => {
@@ -50,7 +44,7 @@ export function TableFilterBar({
             filterComps.set(item.id, { ...item, dynamic: true })
         }
     })
-    // 以 pageView 中传入的 children 为准进行合并（覆盖默认配置）
+
     bar.children.forEach((item) => {
         const field = filterComps.get(item.id)
         if (field) {
@@ -58,7 +52,6 @@ export function TableFilterBar({
         }
     })
 
-    // 初始 filters 里只包含非 dynamic 的字段
     let filtersInit: string[] = []
     filterComps.forEach((item) => {
         if (!item.dynamic) {
@@ -66,16 +59,13 @@ export function TableFilterBar({
         }
     })
 
-    // 供下拉菜单展示的所有 filter 列表
     let filterList: FilterBarElement[] = []
     filterComps.forEach((item) => {
         filterList.push(item)
     })
 
-    // 当前显示的筛选项
     const [filters, setFilters] = useState<string[]>(filtersInit)
 
-    // 用来存储每个筛选项的输入或选择的值，key 为字段 ID
     const [filterValues, setFilterValues] = useState<Record<string, any>>({})
 
     const handleRemoveDynamic = (fieldId: string) => {
@@ -83,7 +73,6 @@ export function TableFilterBar({
         setFilters((prev) => prev.filter((v)=>v != fieldId))
     }
 
-    // 更新输入或多选值
     const handleValueChange = (id: string, value: any) => {
         setFilterValues((prev) => ({
             ...prev,
@@ -91,7 +80,6 @@ export function TableFilterBar({
         }))
     }
 
-    // 渲染单个过滤项
     function renderFilterItem(id: string, idx: number) {
         const fieldDef = filterComps.get(id)
         if (!fieldDef) return null
@@ -109,11 +97,7 @@ export function TableFilterBar({
                 <div key={id} className="flex items-center mr-1">
                     <MultipleSelector
                         key={fieldDef.id}
-                        className={
-                            isDynamic
-                                ? "*:not-first:mt-1 mr-0 rounded-sm rounded-r-none min-h-[30px]"
-                                : "*:not-first:mt-1 mr-2"
-                        }
+                        className={ isDynamic ? "*:not-first:mt-1 mr-0 rounded-sm rounded-r-none min-h-[30px]" : "*:not-first:mt-1 mr-2" }
                         commandProps={{ label: fieldDef.label, className: "top-1 z-12" }}
                         value={selValue}
                         options={options}
@@ -140,11 +124,7 @@ export function TableFilterBar({
                 <div key={id} className="flex items-center mr-1">
                     <Input
                         placeholder={fieldDef.label}
-                        className={
-                            isDynamic
-                                ? "mr-0 rounded-sm rounded-r-none"
-                                : "mr-2"
-                        }
+                        className={ isDynamic ? "mr-0 rounded-sm rounded-r-none" : "mr-2" }
                         value={textValue}
                         onChange={(e) => handleValueChange(fieldDef.id, e.target.value)}
                     />

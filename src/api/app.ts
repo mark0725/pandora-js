@@ -1,10 +1,11 @@
 import { AppConfig, PageLayoutConfig } from '../types'
 import { replaceTemplate } from '../lib/util_string'
 
-interface ApiResult {
-    code: string
-    message: string
-    data?: any
+export interface ApiResult {
+    code: string   //OK: 成功
+    message: string //全局错误信息
+    error: Record<string, string> //详细错误信息，字段错误
+    data?: any //数据
 }
 
 export async function fetchAppConfig(): Promise<AppConfig> {
@@ -23,7 +24,6 @@ export async function fetchPageLayoutConfig(pageId: string, params?: Record<stri
 }
 
 export async function apiRequest(url: string, method: string, params?: URLSearchParams, body?: any): Promise<any> {
-    console.log(method, url)
     const [path, queryString] = url.split("?");
     const params2 = new URLSearchParams(queryString);
     params?.forEach((value, key) => {
@@ -40,7 +40,17 @@ export async function apiRequest(url: string, method: string, params?: URLSearch
     })
 
     const json = await resp.json()
-    if (!json && !resp.ok) throw new Error("发生异常");
+    if (!json && !resp.ok) {
+        //如果status 401 则跳转到登录页面
+        if (resp.status === 401) {
+            window.location.href = '/auth/login';
+            return
+        } else if (resp.status === 403) {
+            window.location.href = '/auth/forbidden';
+            return
+        }
+        throw new Error("发生异常");
+    }
     if (!json ) throw new Error("请求失败");
 
     if (json.code !== 'OK') throw new Error(json.message||"服务器异常")

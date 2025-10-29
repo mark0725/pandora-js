@@ -124,7 +124,6 @@ export function SelectNavPageLayout(props: NavPageLayoutProps) {
                     {config?.menu?.map((m: MenuItem) => {
                         const paramValue = getParamValue()
                         const targetPath = `${path}/${paramValue}/${m.id}`
-                        console.log("targetPath", targetPath)
 
                         const isActive = location.pathname.startsWith(targetPath)
 

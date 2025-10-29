@@ -1,5 +1,5 @@
 import React, { useRef } from "react"
-import { MenuItem, User } from "@/types"
+import { MenuItem, User, AppMenu, AppInfo } from "@/types"
 import { UserMenu } from "@/components/user-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -23,16 +23,13 @@ import { getIcon } from "@/components/icons/dynamic-icon"
 
 
 interface MainLayoutProps {
-    logo: string
-    appName: string
+    app: AppInfo
     user: User
-    mainMenu: MenuItem[]
-    nav2Menu: MenuItem[]
-    userMenu: MenuItem[]
+    menu: AppMenu
 }
 
 export function MainLayout(props: MainLayoutProps) {
-    const { logo, appName, user, mainMenu, nav2Menu, userMenu } = props
+    const { app, user, menu } = props
     const navigate = useNavigate()
     const params = useParams<{ menuId?: string }>()
     const { menuId } = params
@@ -41,10 +38,7 @@ export function MainLayout(props: MainLayoutProps) {
     const mainRef = useRef(null);
     const navRef = useRef(null)
     // 将所有菜单合并，便于后续查找
-    const allMenus = React.useMemo<MenuItem[]>(() => {
-        return [...mainMenu, ...nav2Menu]
-    }, [mainMenu, nav2Menu])
-
+  
     // 点击菜单时修改路由
     function handleMainMenuClick(item: MenuItem) {
         if(!item.id) {
@@ -90,12 +84,12 @@ export function MainLayout(props: MainLayoutProps) {
             <aside ref={navRef} className="flex flex-col w-14 md:w-14 xl:w-16 bg-slate-900 text-white">
                 {/* 顶部 LOGO */}
                 <div className="h-16 flex items-center justify-center border-b border-slate-800">
-                    <img src={logo} alt="logo" className="h-8 w-8 md:h-9 md:w-9 object-contain" />
+                    <img src={app.logo} alt="logo" className="h-8 w-8 md:h-9 md:w-9 object-contain" />
                 </div>
 
                 {/* 主菜单 */}
                 <div className="flex-1 flex flex-col items-center py-2">
-                    {mainMenu.map((item) => {
+                    {menu.main && menu.main.map((item) => {
                         const active = location.pathname.startsWith(`/${item.id}`)
                         return (
                             <Tooltip key={item.id}>
@@ -125,7 +119,7 @@ export function MainLayout(props: MainLayoutProps) {
 
                 {/* 底部副菜单 + 用户菜单 */}
                 <div className="flex flex-col items-center justify-center">
-                    {nav2Menu.map((item) => {
+                    {menu.nav2 && menu.nav2.map((item) => {
                         const active = location.pathname.startsWith(`/${item.id}`)
                         return (
                             <Tooltip key={item.id}>
@@ -160,7 +154,7 @@ export function MainLayout(props: MainLayoutProps) {
                     })}
                     {
                     user && (<div className="p-2">
-                        <UserMenu userName={user.name} userMail={user.mail} avatar={user.avatar} userItems={userMenu} />
+                            <UserMenu userName={user.name} userMail={user.mail} avatar={user.avatar} userItems={menu.navuser} />
                     </div>)
                     }
                     

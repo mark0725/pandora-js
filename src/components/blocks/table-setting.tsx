@@ -54,15 +54,7 @@ function SortableItem({ id, label }: { id: string; label: string }) {
     )
 }
 
-export function TableSetting({
-    dataTable,
-    dataTables,
-    mappingDict
-}: {
-    dataTable: string
-    dataTables: Record<string, DataTable>
-    mappingDict?: MappingDict
-}) {
+export function TableSetting({ dataTable, dataTables, mappingDict }: { dataTable: string, dataTables: Record<string, DataTable>, mappingDict?: MappingDict }) {
     const [rowHeight, setRowHeight] = useState<string>("常规")
     const [fontSize, setFontSize] = useState<string>("中")
     const [columnWidthMode, setColumnWidthMode] = useState<string>("自动")

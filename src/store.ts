@@ -1,70 +1,69 @@
 import { createStore, create } from 'zustand'
 import { apiGet } from "@/api/app"
+import { AppConfig } from "@/types"
 
 // export const useThemeStore = create((set) => ({
 //     theme: 'light',
 //     setTheme: (theme) => set({ theme })
 // }));
 
-//React Context
+export interface AppStore {
+    app: AppConfig;
+    setApp: (app: AppConfig) => void;
+}
+
+export interface AuthStore {
+    authed: boolean;
+    setAuthed: (s: boolean) => void;
+}
+export const useAuthStore = create<AuthStore>((set) => ({
+    authed: false,
+    setAuthed: (s) => set({ authed:s })
+}));
+
 export interface PageStore {
     data: Record<string, any>;
-    effects: Record<string, string>;
+    viewState: Record<string, any>;
+    effects: Record<string, number>;
+    path: string;
+    setState: (state: Partial<PageStore>) => void;
+    setViewState: (view: string, state: any) => void;
     setData: (ds: string, data: any) => void;
     setEffects: (views: string[]) => void;
     fetchData: (viewId: string, url: string, params?: URLSearchParams) => Promise<void>;
 }
 
-export const makePageDataStore = () =>
-    createStore<PageStore>((set) => ({
-        data: {},
-        effects: {},
-        setData: (ds: string, v: any) => {
-            set((state: any) => ({
-                data: {
-                    ...state.data,
-                    [ds]: v
-                }
-            }))
-        },
-        setEffects: (views: string[]) => {
-            const timestamp = Date.now();
-            set((state: any) => ({
-                effects: {
-                    ...state.effects,
-                    ...views.reduce((acc, v) => {
-                        acc[v] = timestamp;
-                        return acc;
-                    }, {} as Record<string, number>),
-                }
-            }))
-        },
-        fetchData: async (dataId: string, url: string, params?: URLSearchParams) => {
-            const data = await apiGet(url, params);
-            set((state: any) => ({
-                data: {
-                    ...state.data,
-                    [dataId]: data
-                }
-            }));
-        }
-    }))
-
-
-export const usePageDataStore = create<PageStore>((set) => ({
+export const createPageStore = () => createStore<PageStore>((set, get) => ({
     data: {},
     effects: {},
+    viewState: {},
+    path: "",
+
+    setState: (state: Partial<PageStore>) => {
+        set(() => state)
+    },
+
     setData: (ds: string, v: any) => {
-        set((state: any) => ({
+        set((state) => ({
             data: {
                 ...state.data,
                 [ds]: v
             }
         }))
     },
+
+    setViewState: (viewId: string, v: any) => {
+        set((state) => ({
+            viewState: {
+                ...state.viewState,
+                [viewId]: v
+            }
+        }))
+    },
+
     setEffects: (views: string[]) => {
         const timestamp = Date.now();
-        set((state: any) => ({
+        set((state) => ({
             effects: {
                 ...state.effects,
                 ...views.reduce((acc, v) => {
@@ -74,13 +73,18 @@ export const usePageDataStore = create<PageStore>((set) => ({
             }
         }))
     },
-    fetchData: async (viewId: string, url: string, params?: URLSearchParams) => {
-        const data = await apiGet(url, params);
-        set((state: any) => ({
-            data: {
-                ...state.data,
-                [viewId]: data
-            }
-        }));
+
+    fetchData: async (ds: string, url: string, params?: URLSearchParams) => {
+        try {
+            const data = await apiGet(url, params);
+            set((state) => ({
+                data: {
+                    ...state.data,
+                    [ds]: data
+                }
+            }));
+        } catch (error) {
+            console.error(`Failed to fetch data for ${ds}:`, error);
+        }
     }
 }))

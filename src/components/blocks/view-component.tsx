@@ -1,5 +1,5 @@
 import React, {CSSProperties} from "react"
-import { DataField, MappingDict, DataTable } from "@/types"
+import { DataField, MappingDict, DataTable, DictItem } from "@/types"
 import { TableBodyColumn } from "./types"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { InputTag } from "@/components/ui/input-tag";
 import MultipleSelector, { Option } from "@/components/ui/multiselect"
+import { SelectSearch, Option as SearchOption} from "@/components/ui/select-search"
 import { MinusIcon, PlusIcon } from "lucide-react"
 import { Button, Group, Input as NumberInput,  NumberField } from "react-aria-components"
 
@@ -159,40 +160,74 @@ export function renderViewElement(fieldValue: any, field: DataField, dataTables:
 }
 
 export function renderEditElement(
-    fieldValue: any,
+    data: Record<string, any>,
     field: DataField,
     dataTables: Record<string, DataTable>,
     onChange: (field:string, value: any) => void,
     mappingDict?: MappingDict,
 ) {
     const placeholder = field.label || field.id;
+    const fieldValue = data[field.id]
+
+    let dictItems = field.source && mappingDict?.[field.source];
     
+    if (field.component === "select" && field.selectFilterBy && dictItems) {
+        const [filterName,filterKey] = field.selectFilterBy.split(":")
+        console.log("filterName",filterName)
+        console.log("filterKey",filterKey)
+        console.log(dictItems)
+        dictItems = { ...dictItems}
+        console.log(data)
+        dictItems.options = dictItems.options.filter((v) => v.fields && v.fields[filterKey] === data[filterName])
+        dictItems.items = dictItems.options.reduce((acc: Record<string, DictItem>, v) => {
+            acc[v.value] = v
+            return acc
+        }, {})
+        console.log(dictItems)
+    }
+
     if (field.component === "select" && field.multiple) {
-        
-        const dictItems = field.source && mappingDict?.[field.source];
-        const values = typeof fieldValue === "string" ? fieldValue.split(",") : []
-        const values2: Option[] = values.map((v: string) => ({
+        const values = typeof fieldValue === "string" && fieldValue.length>0? fieldValue.split(",") : []
+        const values2: Option[] = values && values.length>0? values.map((v: string) => ({
             value: v,
             label: dictItems? dictItems.items[v].label || v : v
-        }))
+        })):[]
         const options: Option[] = dictItems && dictItems.options ?  dictItems.options.map((v) => ({ value: v.value, label: v.label})):[]
        
         return (
             <MultipleSelector
-            key={field.id}
+                key={field.id}
                 commandProps={{ label: field.label, className: "top-1" }}
                 value={values2}
                 options={options}
                 placeholder={placeholder}
                 hidePlaceholderWhenSelected
                 emptyIndicator={<p className="text-center text-sm">没有内容</p>}
-                onChange={(vals) => onChange(field.id, vals.map(val => val.value).join(","))}
+                onChange={(vals) => {
+                        onChange(field.id, vals&&vals.length>0? vals.map(val => val.value).join(","):"")
+                    } }
                 disabled={field.disabled}
             />
                 
         )
+    } else if (field.component === "select" && field.searchable){
+        const options: SearchOption[] = dictItems && dictItems.options ? dictItems.options.map((v) => ({ value: v.value, label: v.label })) : []
+
+        return (
+            <SelectSearch
+                key={field.id}
+                value={fieldValue}
+                options={options}
+                placeholder={placeholder}
+                onChange={(value) => {
+                    onChange(field.id, value.value)
+                }}
+                disabled={false}
+                emptyIndicator={<p className="text-center text-sm">没有内容</p>}
+            />
+
+        )
     } else if (field.component === "select") {
-        const dictItems = field.source && mappingDict?.[field.source];
         return (
             <Select key={field.id} value={fieldValue} onValueChange={(value) => onChange(field.id, value)} disabled={field.disabled}>
                 <SelectTrigger>

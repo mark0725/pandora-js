@@ -1,14 +1,13 @@
-
-import React, { useEffect, useState, useRef } from "react"
+import React, { useCallback, useMemo, useEffect, useState, useRef } from "react"
 import { useParams } from "react-router-dom";
 import { Loadding } from "@/components/page-loadding"
 import { buildViewObject } from "@/components/page-builder"
 import { fetchPageConfig } from "@/api/page"
 import { MenuItem, PageModel } from "@/types"
 import { PageModelContext, PageViewContext } from "@/context/page-context"
-import { makePageDataStore, usePageDataStore } from "@/store"
+import { createPageStore, PageStore} from "@/store"
 import { AlertCircle } from "lucide-react"
-import { useStore } from 'zustand'
+import { createStore,useStore } from 'zustand'
 import { replaceTemplate } from "@/lib/util_string"
 
 import {
@@ -24,7 +23,33 @@ interface PageviewProps {
     menu: MenuItem
 }
 
-// export function PanPageview(props: PageviewProps) {
+
+type PageStoreType = ReturnType<typeof createPageStore>
+const pageStoreMap = new Map<string, PageStoreType>() 
+const MAX_STORE_SIZE = 10
+
+const cleanupOldStores = (currentPath: string) => {
+    if (pageStoreMap.size > MAX_STORE_SIZE) {
+        const entries = Array.from(pageStoreMap.entries())
+        const toDelete = entries
+            .filter(([path]) => path !== currentPath)
+            .slice(0, pageStoreMap.size - MAX_STORE_SIZE + 1)
+
+        toDelete.forEach(([path, store]) => {
+            // 清理 store 数据
+            const state = store.getState()
+            if (state.setState) {
+                state.setState({
+                    data: {},
+                    effects: {},
+                    viewState: {},
+                    path: currentPath
+                })
+            }
+            pageStoreMap.delete(path)
+        })
+    }
+}
 export function PanPageview(props: PageviewProps) { 
     const { id, path, menu } = props
     const [config, setConfig] = useState<PageModel>()
@@ -35,9 +60,31 @@ export function PanPageview(props: PageviewProps) {
     const [record, setRecord] = useState<Record<string, any>>({})
     const pageViewRef = useRef(null);
     // const [store] = useState(() => new PageDataStore()) 
-    const pageStore = React.useMemo(makePageDataStore, [])
+
+    // const pageStore = React.useMemo(createPageStore, [])
+
+    // const pageStore = useMemo(() => {
+    //     if (!pageStoreMap.has(path)) {
+    //         const newStore = createPageStore()
+    //         pageStoreMap.set(path, newStore)
+    //         cleanupOldStores(path)
+    //         return newStore
+    //     }
+
+    //     return pageStoreMap.get(path)!
+    // }, [path])
+    if (!pageStoreMap.has(path)) {
+        const newStore = createPageStore()
+        pageStoreMap.set(path, newStore)
+        cleanupOldStores(path)
+    }
+
+    const pageStore = pageStoreMap.get(path)!
+    
+    // 使用 store 的方法
     const setEffects = useStore(pageStore, (state) => state.setEffects)
     const fetchData = useStore(pageStore, (state) => state.fetchData)
+
     // const setEffects = useStore((state) => state.setEffects)
     const urlParams = useParams();
     const urlVars: Record<string, string> = {}
@@ -50,7 +97,6 @@ export function PanPageview(props: PageviewProps) {
     }
 
     async function loadConfigData() {
-        setLoading(true)
         try {
             const params = new URLSearchParams(window.location.search)
             const pageConfig = await fetchPageConfig(id, menu.url || '', params)
@@ -70,8 +116,9 @@ export function PanPageview(props: PageviewProps) {
     }
 
     useEffect(() => {
+        setLoading(true)
         void loadConfigData()
-    }, [id])
+    }, [path])
 
     useEffect(() => {
         const loadData = async () => {
@@ -141,11 +188,10 @@ export function PanPageview(props: PageviewProps) {
                         const viewConfig = pageView[vn]
                         if (!viewConfig) return null
                         if (typeof viewConfig !== "object") return null
+                        let prop = { id: vn, vo: viewConfig, dataTables: dataSet, operations, key: vn }
                         return (
-                            <PageViewContext.Provider value={{ id: vn, viewConfig, }} key={"pbc:" + vn + ":" + id}>
-                                <React.Fragment key={"pb:"+vn+":"+id}>
-                                    {buildViewObject({ id: vn, vo: viewConfig, dataTables: dataSet, operations, key:vn})}
-                                </React.Fragment>
+                            <PageViewContext.Provider value={{ id: vn, viewConfig, }} key={"pbc:" + vn + ":"}>
+                                {buildViewObject(prop)}
                             </PageViewContext.Provider>
                         )
                     })}

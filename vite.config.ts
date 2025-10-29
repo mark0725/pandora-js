@@ -16,10 +16,10 @@ export default defineConfig({
     },
   },
   server: {
-    proxy: {
-      '/pan-pages': 'http://localhost:9876/',
-      '/api': 'http://localhost:9876/',
-      '/admin-api': 'http://localhost:9876/'
-    }
+    // proxy: {
+    //   '/pan-pages': 'http://localhost:9876/',
+    //   '/api': 'http://localhost:9876/',
+    //   '/admin-api': 'http://localhost:9876/'
+    // }
   },
 })

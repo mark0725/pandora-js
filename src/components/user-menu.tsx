@@ -16,6 +16,12 @@ interface UserMenuProps {
 
 export function UserMenu({ userName, userMail, avatar, userItems }: UserMenuProps) {
     const navigate = useNavigate()
+     function handleMainMenuClick(item: MenuItem) {
+        if(!item.id) {
+            return
+        }
+        navigate(`/${item.id}`)
+    }
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -32,7 +38,7 @@ export function UserMenu({ userName, userMail, avatar, userItems }: UserMenuProp
                     </div>
                 </div>
 
-                {userItems.map((item) => {
+                {userItems&&userItems.map((item) => {
                     if (item.type === 'link' && item.url) {
                         return (
                             <DropdownMenuItem key={item.id}>

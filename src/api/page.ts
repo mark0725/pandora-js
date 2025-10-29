@@ -12,7 +12,6 @@ export async function fetchPageConfig(pageId: string, path: string, params: URLS
 export async function fetchPageMapping(pageId: string, path: string, params: Record<string, any>, urlVars?: Record<string, string>): Promise<MappingDict|null> {
     const apiUrl = replaceTemplate(path, { ...(params || {}), ...(urlVars || {}) });
     const urlParams = new URLSearchParams()
-    console.log('apiUrl', apiUrl)
     try {
         const result = await apiGet(apiUrl, urlParams);
         return result?.dict;

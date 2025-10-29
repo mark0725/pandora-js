@@ -6,19 +6,32 @@ export type User = {
     avatar: string
 }
 
+export type UserAuth = {
+    authed: boolean;
+    auth_type: string;
+    auth_url: string;
+    signin_url: string;
+    signout_url: string;
+};
+
+export type AppMenu = {
+    main: MenuItem[]
+    nav2: MenuItem[]
+    navuser: MenuItem[]
+}
+
+export type AppInfo = {
+    name: string
+    version: string
+    logo: string
+    title: string
+}
+
 export interface AppConfig {
-    app: {
-        name: string
-        version: string
-        logo: string
-        title: string
-    }
+    app: AppInfo
+    auth: UserAuth
     user: User
-    menu: {
-        main: MenuItem[]
-        nav2: MenuItem[]
-        navuser: MenuItem[]
-    }
+    menu: AppMenu
 }
 
 export interface PageLayoutConfig {
@@ -58,6 +71,7 @@ export type DictItem = {
     icon?: string;
     style?: string;
     color?: string;
+    fields?: Record<string, any>;
 }
 
 export type Dict = {
@@ -88,6 +102,8 @@ export interface DataField {
     inputFormat?: string
     multiple?: boolean
     disabled?: boolean
+    effectMap?: Record<string, string>
+    selectFilterBy?: string
 }
 
 export interface DataTable {

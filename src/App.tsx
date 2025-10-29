@@ -9,6 +9,8 @@ import { Toaster } from 'sonner';
 import { ThemeProvider } from 'next-themes'
 import { useTheme } from 'next-themes'
 import { AlertCircle } from "lucide-react"
+import {LoginPage } from "@/pages/auth/login"
+import { useAuthStore } from "@/store"
 
 import {
     Alert,
@@ -21,8 +23,11 @@ export default function App() {
     const [loading, setLoading] = React.useState(true)
     const [error, setError] = React.useState<string>('')
     const { theme, setTheme } = useTheme()
+    const authed = useAuthStore(s => s.authed)
+
     setTheme('light')
     React.useEffect(() => {
+        setLoading(true)
         fetchAppConfig()
             .then((data) => {
                 setConfig(data)
@@ -34,12 +39,11 @@ export default function App() {
                 setError('Loading app config failed')
                 setLoading(false)
             })
-    }, [])
+    }, [authed])
 
     if (loading) {
         return ( <Loadding/> )
     }
-
     
     if (error || !config) {
         return (<div className="flex h-full flex-1 p-4 items-center justify-center">
@@ -51,7 +55,27 @@ export default function App() {
         </div>)
     }
 
-    const allMenus = [...config.menu.main, ...config.menu.nav2]
+    const allMenus = [...config.menu.main]
+    if (config.menu.nav2) {
+        allMenus.push(...config.menu.nav2)
+    }
+    
+    if(config.auth) {
+        const { authed, auth_type, signin_url } = config.auth;
+
+        // 2. 计算当前页面和登陆页的 pathname
+        const currentPath = window.location.pathname;
+        const signinPath = new URL(signin_url, window.location.origin).pathname;
+        console.log('currentPath', currentPath)
+        console.log('signinPath', signinPath)
+        // 3. 未登录 && 不在登陆页 => 跳转
+        // if (!authed && currentPath !== signinPath) {
+        //     window.location.replace(signin_url);
+        // }
+        if (!authed && auth_type=='sso') {
+            window.location.replace(signin_url);
+        }
+    }
 
     return (
         <>
@@ -62,18 +86,17 @@ export default function App() {
                     <Loadding />
                 </div>
             )}
-            <Routes>
-                
+            {config.auth && !config.auth.authed? (<LoginPage appConfig={config}/>):
+            (<Routes>
+                {/* <Route path="/auth/login" element={<LoginPage />} /> */}
                 <Route
                     path="/"
                     element={
                         <MainLayout
-                            logo={config.app.logo}
-                            appName={config.app.name}
+                            app={config.app}
                             user={config.user}
-                            mainMenu={config.menu.main}
-                            nav2Menu={config.menu.nav2}
-                            userMenu={config.menu.navuser}
+                            menu={config.menu}
+                    
                         />
                     }
                 >
@@ -96,7 +119,7 @@ export default function App() {
 
                     {/* <Route path="*" element={<Navigate to="/home" replace />} /> */}
                 </Route>
-            </Routes>
+            </Routes>)}
             </ThemeProvider>
         </>
     )

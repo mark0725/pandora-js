@@ -1,15 +1,16 @@
-import React, { useEffect, useState, CSSProperties, useContext } from 'react'
+import React, { useEffect, useState, useCallback, CSSProperties, useContext } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ViewComponentProps, RowData, TableBodyColumn } from './types'
 import { MappingDict, Operation } from '@/types'
+import { PageStore } from '@/store'
 import { fetchPageMapping } from "@/api/page"
 import { apiGet} from "@/api/app"
 import { replaceTemplate } from "@/lib/util_string"
 import { RiAddLine, RiEqualizerLine } from '@remixicon/react'
 import { renderTableElement } from './view-component'
-import { TableFilterBar } from './table-filter-bar'
+import { FilterBar } from './filter-bar'
 import { TableSetting } from './table-setting'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner';
@@ -17,6 +18,7 @@ import { PageModelContext, PageViewContext } from "@/context/page-context"
 import { handleOperation } from "@/components/action"
 import { useParams } from "react-router-dom";
 import { useStore } from 'zustand'
+import { Loadding } from "@/components/page-loadding"
 import {
     Popover,
     PopoverContent,
@@ -37,6 +39,19 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 
+type PageBarSate = {
+    page_count: number
+    total: number
+}
+
+type PageBarConfig = {
+    page_index: number
+    page_count: number
+    page_size: number
+    total: number
+    selected_pages: number[]
+}
+
 export function TablePageView({ id, vo, dataTables, operations }: ViewComponentProps&React.ComponentProps<"div">) {
     const ctx = useContext(PageModelContext);
     const pageViewCtx = useContext(PageViewContext);
@@ -48,21 +63,33 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
     Object.entries(urlParams).forEach(([key, value]) => {
         if (value && key !== '*') urlVars[key] = value
     });
-    const [tableData, setTableData] = useState<RowData[]>([])
-    const [loading, setLoading] = useState(false)
+    // const [tableData, setTableData] = useState<RowData[]>([])
+
+    const currentPath = window.location.pathname
+    const tableDataSelector = useCallback((state: any) => state.data[vo.id], [vo.id, currentPath]);
+    const setDataSelector = useCallback((state: any) => state.setData, [vo.id]);
+    const effectsSelector = useCallback((state: any) => state.effects, [vo.id]);
+    const viewStateSelector = useCallback((state: any) => state.viewState[vo.id], [vo.id]);
+
+    const storePath = useStore(ctx.store, (state: any) => state.path);
+    const tableData = useStore(ctx.store, (state: any) => state.data[vo.id]);
+    const setTableData = useStore(ctx.store, (state: any) => state.setData);
+    const effects = useStore(ctx.store, effectsSelector);
+    const viewState = useStore(ctx.store, viewStateSelector);
+
+    const [loading, setLoading] = useState(true)
     const [page, setPage] = useState<number>(1)
     const [total, setTotal] = useState<number>(0)
     const [pageSize, setPageSize] = useState<number>(50)
     const [selectedKeys, setSelectedKeys] = useState<string[]>([])
-    const [goPage, setGoPage] = useState<string>('1')
+    const [goPage, setGoPage] = useState<number>(1)
     const [mappingDict, setMappingDict] = useState<MappingDict>()
+
     // 增加外部筛选状态
     const [extFilters, setExtFilters] = useState<{ filters: string[]; filterValues: Record<string, any> }>({
         filters: [],
         filterValues: {}
     })
-
-    const effects = useStore(ctx.store, (state) => state.effects)
 
     const tblView = vo
     const apiUrl = tblView.api
@@ -118,8 +145,8 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
 
                 setMappingDict(mappingData || {})
             }
-            
-            setTableData(content)
+
+            setTableData(vo.id, content)
             setTotal(totalElements)
         } catch (error) {
             console.error(error)
@@ -133,7 +160,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
         if (apiUrl) {
             void loadData()
         }
-    }, [id, page, pageSize, apiUrl, extFilters, effects])
+    }, [currentPath, extFilters])
 
 
     function renderTableToolBar() {
@@ -203,16 +230,17 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
             if (!rightCfg) return null
             return (
                 <div className="flex items-center space-x-2 gap-2">
-                    <TableFilterBar
+                    <FilterBar
                         bar={rightCfg}
                         dataTable={dataTableId}
                         dataTables={dataTables}
                         mappingDict={mappingDict}
                         onSearch={({ filters, filterValues }) => {
                             console.log('filters', filters)
+                            console.log('filterValues', filterValues)
                             setExtFilters({ filters, filterValues })
                             setPage(1)
-                            setGoPage('1')
+                            setGoPage(1)
                         }}
                     />
                     <Popover >
@@ -267,7 +295,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
                                 className="pt-1 pb-1 h-10 whitespace-nowrap overflow-hidden text-ellipsis"
                             >
                                 <Checkbox
-                                    checked={selectedKeys.length === tableData.length && tableData.length > 0}
+                                    checked={tableData && selectedKeys.length === tableData.length && tableData.length > 0}
                                     onCheckedChange={checked => {
                                         if (checked) {
                                             setSelectedKeys(tableData.map(item => String(item[rowKey])))
@@ -303,7 +331,16 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
     }
 
     function renderTableBody() {
-        if (!tableData.length && !loading) {
+        if (loading) {
+            return (
+                 <TableRow className="h-12">
+                    <TableCell colSpan={mergedColumns.length} className="text-center">
+                         <Loadding />
+                    </TableCell>
+                </TableRow>
+            )
+        }
+        if ((!tableData||!tableData.length) && !loading) {
             return (
                 <TableRow className="h-12">
                     <TableCell colSpan={mergedColumns.length} className="text-center">
@@ -375,28 +412,28 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
 
     function prevPage() {
         setPage(p => (p > 1 ? p - 1 : 1))
-        setGoPage(String(page > 1 ? page - 1 : 1))
+        setGoPage(page > 1 ? page - 1 : 1)
     }
 
     function nextPage() {
         const totalPages = Math.ceil(total / pageSize)
         setPage(p => (p < totalPages ? p + 1 : totalPages))
-        setGoPage(String(page < totalPages ? page + 1 : totalPages))
+        setGoPage(page < totalPages ? page + 1 : totalPages)
     }
 
     function handleGoPage() {
-        let val = parseInt(goPage, 10) || 1
+        let val = goPage || 1
         const totalPages = Math.ceil(total / pageSize)
         if (val < 1) val = 1
         if (val > totalPages) val = totalPages
         setPage(val)
-        setGoPage(String(val))
+        setGoPage(val)
     }
 
     function renderPagination() {
         if (!tableFoot?.show) return null
         const totalPages = Math.ceil(total / pageSize) || 1
-        const currCount = tableData.length
+        const currCount = tableData? tableData.length:0
         const switchPageArr = (String(tableFoot.switchPage) || '')
             .split(',')
             .map(x => x.trim())
@@ -414,7 +451,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
                         onValueChange={(val) => {
                             setPageSize(Number(val))
                             setPage(1)
-                            setGoPage('1')
+                            setGoPage(1)
                         }}
                     >
                         <SelectTrigger className="w-[72px]">
@@ -444,7 +481,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
                     <Input
                         className="w-14 h-8"
                         value={goPage}
-                        onChange={(e) => setGoPage(e.target.value)}
+                        onChange={(e) => setGoPage(parseInt(e.target.value))}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') handleGoPage()
                         }}
@@ -454,8 +491,9 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
             </div>
         )
     }
-
+   
     return (
+        
         <div className="p-1 pb-0 flex flex-col w-full h-full bg-whit text-xs font-normal text-gray-700 overflow-hidden">
             <div className="flex">
                 {renderTableToolBar()}

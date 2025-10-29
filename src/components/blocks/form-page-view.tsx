@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useMemo } from 'react'
+import React, { useCallback,useEffect, useState, useContext, useMemo, use } from 'react'
 import { Button } from '@/components/ui/button'
 import { ViewComponentProps } from './types'
 import { MappingDict, DataField } from '@/types'
@@ -10,20 +10,35 @@ import { toast } from 'sonner'
 import { renderEditElement } from './view-component'
 import { getIcon } from '@/components/icons/dynamic-icon'
 import InputTagDemoPage from '@/pages/input-tag-demo'
-import { PageModelContext } from "@/context/page-context"
+import { PageModelContext, PageViewContext } from "@/context/page-context"
 import { handleOperation } from "@/components/action"
 import { useParams } from "react-router-dom";
+import { useStore } from 'zustand'
 
 export function FormPageView({ id, vo, dataTables, operations }: ViewComponentProps) {
+    const ctx = useContext(PageModelContext);
+    const pageViewCtx = useContext(PageViewContext);
+    if (!ctx) throw new Error("must be used within PageModelProvider");
+    if (!pageViewCtx) throw new Error("must be used within PageViewProvider");
+
     const [loading, setLoading] = useState(false)
     const [mappingDict, setMappingDict] = useState<MappingDict>()
-    
+    const dataTableId = vo.dataTable
+
+    const formDataSelector = useCallback((state: any) => state.data[vo.id], [vo.id, dataTableId]);
+    const setDataSelector = useCallback((state: any) => state.setData, []);
+    const effectsSelector = useCallback((state: any) => state.effects, []);
+    const viewStateSelector = useCallback((state: any) => state.viewState[vo.id], [vo.id]);
+
+    const data = useStore(ctx.store, formDataSelector);
+    const setData = useStore(ctx.store, setDataSelector);
+    const effects = useStore(ctx.store, effectsSelector);
+    const viewState = useStore(ctx.store, viewStateSelector);
    
     const apiUrl = vo.api
     const rowKey = vo.rowKey || 'id'
-    const dataTableId = vo.dataTable
+    
     const dataTable = dataTables[dataTableId]
-    const ctx = useContext(PageModelContext)
 
     let defaultValues: Record<string, any> = {}
     if (vo.mode === 'edit') {
@@ -45,7 +60,8 @@ export function FormPageView({ id, vo, dataTables, operations }: ViewComponentPr
         })
     }
     const [formData, setFormData] = useState<Record<string, any>>(defaultValues)
-
+  
+    
     // 加载数据&字典
     async function loadData() {
         setLoading(true)
@@ -112,7 +128,7 @@ export function FormPageView({ id, vo, dataTables, operations }: ViewComponentPr
             return (
                 <div key={child.id} className={cn("flex flex-col", getColSpanClass(child))}>
                     <Label htmlFor={child.id} className="mb-1 font-normal">{fieldCfg.label}</Label>
-                    {renderEditElement(formData[fieldCfg.id], { ...fieldCfg, ...child}, dataTables, onFieldValueChange, mappingDict)}
+                    {renderEditElement(formData, { ...fieldCfg, ...child}, dataTables, onFieldValueChange, mappingDict)}
                 </div>
             )
         }

@@ -68,7 +68,6 @@ export function NavPageLayout(props: NavPageLayoutProps) {
                 <div className="flex space-x-1 h-10">
                     {config?.menu?.map((m: MenuItem) => {
                         const targetPath = `${path}/${m.id}`
-                        console.log("targetPath", targetPath)
 
                         const isActive = location.pathname.startsWith(targetPath)
 
