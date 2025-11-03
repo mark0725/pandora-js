@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { toast } from 'sonner'
 import { renderEditElement } from './view-component'
 import { getIcon } from '@/components/icons/dynamic-icon'
-import InputTagDemoPage from '@/pages/input-tag-demo'
 import { PageModelContext, PageViewContext } from "@/context/page-context"
 import { handleOperation } from "@/components/action"
 import { useParams } from "react-router-dom";

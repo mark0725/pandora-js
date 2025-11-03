@@ -160,7 +160,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
         if (apiUrl) {
             void loadData()
         }
-    }, [currentPath, extFilters])
+    }, [currentPath, extFilters, effects, page, pageSize])
 
 
     function renderTableToolBar() {
