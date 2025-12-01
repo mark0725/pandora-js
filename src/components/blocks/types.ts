@@ -9,6 +9,8 @@ export interface ViewComponentProps {
     operations: Record<string, Operation>
     key?: string
     data?: Record<string, any>
+    dataTableId?: string
+    dict?: MappingDict
     children?: React.ReactNode[]
 }
 

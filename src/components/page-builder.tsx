@@ -1,15 +1,21 @@
-import React, { useEffect, useState, useContext, useRef } from "react"
-import { PageModel, Operation, ViewObject, DataTable, DataField, MappingDict } from "@/types"
+import React from "react"
+import { ViewObject} from "@/types"
 import { TablePageView } from "@/components/blocks/table-page-view"
 import { FormPageView } from "@/components/blocks/form-page-view"
 import { DashboardPageView } from "@/components/blocks/dashboard-page-view"
 import { DrawerView  } from "@/components/blocks/drawer-view"
 import { DialogView  } from "@/components/blocks/dialog-view"
 import { Chart } from "@/components/blocks/chart"
-import { PageModelContext } from "@/context/page-context"
+import { TreeView } from "@/components/blocks/tree-view"
+import { ActionBar } from "@/components/blocks/action-bar"
+import { FilterBar } from "@/components/blocks/filter-bar"
 import { ViewComponentProps } from "@/components/blocks/types" 
 import { cn } from '@/lib/utils'
-
+import {
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+} from "@/components/ui/resizable"
 
 import { transformObject } from '@/lib/util_string'
 
@@ -36,6 +42,7 @@ const TabLayout = ({ id, vo, ...props }: ViewComponentProps & React.ComponentPro
         ))}
     </div>
 }
+
 const VBox = ({ id, vo, ...props }: ViewComponentProps & React.ComponentProps<"div">) => {
     return <div key={vo.name} className={cn("flex flex-col", vo.className)}>
         {renderChildren({ id, vo, ...props })}
@@ -61,12 +68,30 @@ const Tab = ({ id, vo, ...props }: ViewComponentProps & React.ComponentProps<"di
     )
 }
 
+const SplitContainer = ({ id, vo, ...props }: ViewComponentProps & React.ComponentProps<"div">) => { 
+    return(
+        <ResizablePanelGroup direction={vo.direction || "horizontal"} >
+            <ResizablePanel defaultSize={15}>
+                {vo.primary && buildViewObject({ id, ...props, vo: vo.primary}) }
+            </ResizablePanel>
+            <ResizableHandle withHandle/>
+            <ResizablePanel defaultSize={85}>
+                {vo.second && buildViewObject({ id, ...props, vo: vo.second })}
+            </ResizablePanel>
+        </ResizablePanelGroup>
+    )
+}
+
 const componentsRegistry: Record<string, React.ElementType> = {
     Drawer: DrawerView,
     Dialog: DialogView,
     Form: FormPageView,
     TableView: TablePageView,
     TabLayout,
+    Tree: TreeView,
+    ActionBar,
+    FilterBar,
+    SplitContainer,
     DashboardView: DashboardPageView,
     Tab,
     VBox,

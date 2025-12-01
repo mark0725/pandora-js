@@ -13,6 +13,9 @@ export async function handleOperation({ oper, ctx, record, urlVars }: { oper: Op
         case 'view':
             oper.view && ctx?.showView(oper.view, record ? record : undefined);
             break;
+        case 'store':
+            oper.store && ctx?.store.getState().setData(oper.store, record, oper.method);
+            break;
         case 'api':
             if (!oper.api) {
                 toast.error('请配置API接口');

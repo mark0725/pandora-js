@@ -2,15 +2,14 @@ import React, { useEffect, useState, useCallback, CSSProperties, useContext } fr
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ViewComponentProps, RowData, TableBodyColumn } from './types'
-import { MappingDict, Operation } from '@/types'
+import { ViewComponentProps, TableBodyColumn } from './types'
+import { MappingDict, ViewObject } from '@/types'
 import { PageStore } from '@/store'
 import { fetchPageMapping } from "@/api/page"
 import { apiGet} from "@/api/app"
 import { replaceTemplate } from "@/lib/util_string"
-import { RiAddLine, RiEqualizerLine } from '@remixicon/react'
+import { RiEqualizerLine } from '@remixicon/react'
 import { renderTableElement } from './view-component'
-import { FilterBar } from './filter-bar'
 import { TableSetting } from './table-setting'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner';
@@ -19,17 +18,14 @@ import { handleOperation } from "@/components/action"
 import { useParams } from "react-router-dom";
 import { useStore } from 'zustand'
 import { Loadding } from "@/components/page-loadding"
+import { ButtonGroup } from "@/components/ui/button-group"
+import { base64UrlEncode} from "@/lib/util_string"
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import {
     Select,
     SelectContent,
@@ -63,8 +59,10 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
     Object.entries(urlParams).forEach(([key, value]) => {
         if (value && key !== '*') urlVars[key] = value
     });
-    // const [tableData, setTableData] = useState<RowData[]>([])
+    // const [tableData, setData] = useState<RowData[]>([])
 
+    const viewDataStoreId = vo.dataStore||vo.id
+    const viewParamStoreId = vo.paramsStore||vo.id+"-params"
     const currentPath = window.location.pathname
     const tableDataSelector = useCallback((state: any) => state.data[vo.id], [vo.id, currentPath]);
     const setDataSelector = useCallback((state: any) => state.setData, [vo.id]);
@@ -72,8 +70,9 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
     const viewStateSelector = useCallback((state: any) => state.viewState[vo.id], [vo.id]);
 
     const storePath = useStore(ctx.store, (state: any) => state.path);
-    const tableData = useStore(ctx.store, (state: any) => state.data[vo.id]);
-    const setTableData = useStore(ctx.store, (state: any) => state.setData);
+    const tableData = useStore(ctx.store, (state: any) => state.data[viewDataStoreId]);
+    const viewParams = useStore(ctx.store, (state: any) => state.data[viewParamStoreId]);
+    const setData = useStore(ctx.store, (state: any) => state.setData);
     const effects = useStore(ctx.store, effectsSelector);
     const viewState = useStore(ctx.store, viewStateSelector);
 
@@ -84,12 +83,6 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
     const [selectedKeys, setSelectedKeys] = useState<string[]>([])
     const [goPage, setGoPage] = useState<number>(1)
     const [mappingDict, setMappingDict] = useState<MappingDict>()
-
-    // 增加外部筛选状态
-    const [extFilters, setExtFilters] = useState<{ filters: string[]; filterValues: Record<string, any> }>({
-        filters: [],
-        filterValues: {}
-    })
 
     const tblView = vo
     const apiUrl = tblView.api
@@ -121,19 +114,28 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
             params.set('page', String(page))
             params.set('size', String(pageSize))
            
-            extFilters.filters.forEach((k) => {
-                const val = extFilters.filterValues[k]
-                if (val) {
-                    if (Array.isArray(val)) {
-                        val.length > 0 && params.set(k, val.map(v => v.value).join(','))
-                    } if (typeof val === 'object') {
-                        val.value && params.set(k, val.value)
-                    } else {
-                        val.length > 0 && params.set(k, val)
+            console.log("viewParams:", viewParams)
+            if (viewParams) {
+                Object.keys(viewParams).forEach((k) => {
+                    const val = viewParams[k]
+                    if (!val) {
+                        return
                     }
-                }
 
-            })
+                    if(k==='filter') {
+                        //base64
+                        params.set(k, base64UrlEncode(JSON.stringify(val)))
+                    } else {
+                        if (Array.isArray(val)) {
+                            val.length > 0 && params.set(k, val.map(v => v.value).join(','))
+                        } if (typeof val === 'object') {
+                            val.value && params.set(k, val.value)
+                        } else {
+                            val.length > 0 && params.set(k, val)
+                        }
+                    }
+                })
+            }
 
             const getUrl = replaceTemplate(apiUrl, urlVars)
             const result = await apiGet(getUrl, params)
@@ -146,7 +148,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
                 setMappingDict(mappingData || {})
             }
 
-            setTableData(vo.id, content)
+            setData(viewDataStoreId, content)
             setTotal(totalElements)
         } catch (error) {
             console.error(error)
@@ -160,107 +162,30 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
         if (apiUrl) {
             void loadData()
         }
-    }, [currentPath, extFilters, effects, page, pageSize])
+    }, [currentPath, viewParams, effects, page, pageSize])
 
 
     function renderTableToolBar() {
-        const toolBar = tblView.toolBar
-        if (!toolBar) return null
-
-        // 左侧按钮
-        const renderLeftBar = () => {
-            const leftCfg = toolBar.left
-            if (!leftCfg) return null
-
-            const mainActions = (leftCfg.actions?.children || []).map((act: any) => {
-                const oper = operations[act.id] ? { ...operations[act.id], ...act } : act
-                return (
-                    <Button
-                        key={act.id}
-                        variant={
-                            oper.level === 'primary' ? 'default' : oper.level === 'danger' ? 'destructive' : 'outline'
-                        }
-                        className="mr-1 px-3 gap-1 text-sm font-normal rounded-sm"
-                        onClick={async () => {
-                            await handleOperation({ oper, ctx, urlVars });
-                            } 
-                        }
-                    >
-                        {oper.icon === 'FfPlus' ? <RiAddLine className="mr-0 h-4 w-4" /> : null}
-                        {oper.label}
-                    </Button>
-                )
-            })
-
-            const moreActions = (leftCfg.actionMore?.children || []).map((act: any) => {
-                const oper = operations[act.id] ? { ...operations[act.id], ...act } : act
-                return(<DropdownMenuItem
-                    key={oper.name}
-                    className="w-full justify-start text-sm"
-                    onClick={async () => { 
-                        await handleOperation({ oper, ctx, urlVars })
-                    }}
-                >
-                    {oper.label}
-                </DropdownMenuItem>)
-            })
-
-            return (
-                <div className="flex items-center">
-                    {mainActions}
-                    {moreActions.length > 0 && (
-                        <div className="relative">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="mr-1 px-3 text-sm rounded-sm"> ... </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent sideOffset={0} align="end" className="w-40 p-2">
-                                    {moreActions}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    )}
-                </div>
-            )
-        }
-
-        // 右侧过滤和设置
-        const renderRightBar = () => {
-            const rightCfg = toolBar.right
-            if (!rightCfg) return null
-            return (
-                <div className="flex items-center space-x-2 gap-2">
-                    <FilterBar
-                        bar={rightCfg}
-                        dataTable={dataTableId}
-                        dataTables={dataTables}
-                        mappingDict={mappingDict}
-                        onSearch={({ filters, filterValues }) => {
-                            console.log('filters', filters)
-                            console.log('filterValues', filterValues)
-                            setExtFilters({ filters, filterValues })
-                            setPage(1)
-                            setGoPage(1)
-                        }}
-                    />
-                    <Popover >
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" size="icon">
-                                <RiEqualizerLine className="mr-0 h-4 w-4" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className='text-sm' align='end' sideOffset={0}>
-                            <TableSetting dataTable={dataTableId} dataTables={dataTables} mappingDict={mappingDict} />
-                        </PopoverContent>
-                    </Popover>
-                </div>
-            )
-        }
-
         return (
             <div className="flex items-center justify-between mb-1 w-full">
-                <div className="flex space-x-2">{renderLeftBar()}</div>
-                <div className="flex space-x-2">{renderRightBar()}</div>
+                <div className="flex space-x-2">{tblView.toolBar && tblView.toolBar.left && tblView.toolBar.left.object && ctx.buildViewObject({ id: "left", dataTables, operations, vo: (tblView.toolBar.left as ViewObject), dict: mappingDict, dataTableId })}</div>
+                <div className="flex space-x-2">
+                    <div className="flex items-center space-x-2 gap-2">
+                        {tblView.toolBar && tblView.toolBar.right && tblView.toolBar.right.object && ctx.buildViewObject({ id: "right", dataTables, operations, vo: (tblView.toolBar.right as ViewObject), dict: mappingDict, dataTableId })}
+                        {tblView.isSetting && <ButtonGroup>
+                            <Popover >
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" size="icon">
+                                        <RiEqualizerLine className="mr-0 h-4 w-4" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className='text-sm' align='end' sideOffset={0}>
+                                    <TableSetting dataTable={dataTableId} dataTables={dataTables} mappingDict={mappingDict} />
+                                </PopoverContent>
+                            </Popover>
+                        </ButtonGroup>}
+                    </div>
+                </div>
             </div>
         )
     }

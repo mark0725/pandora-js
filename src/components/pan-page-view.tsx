@@ -82,6 +82,7 @@ export function PanPageview(props: PageviewProps) {
     const pageStore = pageStoreMap.get(path)!
     
     // 使用 store 的方法
+    const setPageDatas = useStore(pageStore, (state) => state.setDatas)
     const setEffects = useStore(pageStore, (state) => state.setEffects)
     const fetchData = useStore(pageStore, (state) => state.fetchData)
 
@@ -121,11 +122,18 @@ export function PanPageview(props: PageviewProps) {
     }, [path])
 
     useEffect(() => {
+        if (config?.dataStore) {
+            let pageState = {}
+            for (const data of Object.values(config?.dataStore || {})) {
+                data.type == 'list' ? (pageState[data.id] = []) : (pageState[data.id] = {})
+            }
+            setPageDatas(pageState)
+        }
         const loadData = async () => {
             setDataLoading(true)
             try {
                 for (const data of Object.values(config?.dataStore || {})) {
-                    data.api && fetchData(data.id, replaceTemplate(data.api, urlVars))
+                    data.api && await fetchData(data.id, replaceTemplate(data.api, urlVars))
                 }
             } catch (error) {
                 setError('加载配置信息失败')
@@ -134,9 +142,8 @@ export function PanPageview(props: PageviewProps) {
                 setDataLoading(false)
             }
         }
-        if (config?.dataStore) {
-            loadData()
-        }
+      
+        loadData()
         
     }, [id, config])
 

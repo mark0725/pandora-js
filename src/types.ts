@@ -93,6 +93,7 @@ export interface DataField {
     label: string
     component: string
     isFilter?: boolean
+    filterOps?: string
     required?: boolean
     source?: string
     clearable?: boolean
@@ -130,6 +131,7 @@ export interface Operation {
     label: string
     title?: string
     view?: string
+    store?: string
     confirm?: string
     api?: string
     method?: string

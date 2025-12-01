@@ -113,3 +113,14 @@ export function transformObject(obj: any, params: Record<string, string>) {
 
     return obj
 }
+
+export function base64UrlEncode(str: string): string {
+    // Unicode 字符需要先转成 UTF-8
+    const utf8Str = encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) =>
+        String.fromCharCode(parseInt(p1, 16))
+    );
+    // 标准 base64 编码
+    const base64 = btoa(utf8Str);
+    // 替换字符，去除 padding
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}

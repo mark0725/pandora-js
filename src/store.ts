@@ -28,7 +28,8 @@ export interface PageStore {
     path: string;
     setState: (state: Partial<PageStore>) => void;
     setViewState: (view: string, state: any) => void;
-    setData: (ds: string, data: any) => void;
+    setData: (ds: string, data: any, method: string) => void;
+    setDatas: (data: Record<string, any>) => void;
     setEffects: (views: string[]) => void;
     fetchData: (viewId: string, url: string, params?: URLSearchParams) => Promise<void>;
 }
@@ -43,11 +44,33 @@ export const createPageStore = () => createStore<PageStore>((set, get) => ({
         set(() => state)
     },
 
-    setData: (ds: string, v: any) => {
+    setData: (ds: string, v: any, method: string = "replace") => {
+        if (method === "replace") {
+            set((state) => ({
+                data: {
+                    ...state.data,
+                    [ds]: v
+                }
+            }))
+            return
+        }
+
         set((state) => ({
             data: {
                 ...state.data,
-                [ds]: v
+                [ds]: {
+                    ...state.data[ds]||{},
+                    ...v
+                }
+            }
+        }))
+    },
+
+    setDatas: (data: Record<string, any>) => {
+        set((state) => ({
+            data: {
+                ...state.data,
+                ...data
             }
         }))
     },
