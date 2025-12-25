@@ -1,8 +1,10 @@
 import { toast } from 'sonner';
 import { MappingDict, Operation } from '@/types'
-import { PageModelContext, PageViewContext,PageModelContextType } from "@/context/page-context"
+import { PageModelContext, PageViewContext, PageModelContextType } from "@/context/page-context"
 import { apiRequest } from "@/api/app"
-import {useContext } from 'react'
+import { useContext } from 'react'
+import { i18n } from '@/lib/i18n';
+
 function replaceTemplate(template: string, params: Record<string, string>) {
     return template.replace(/\${(\w+)}/g, (_, key) => params[key] ?? '');
 }
@@ -18,19 +20,19 @@ export async function handleOperation({ oper, ctx, record, urlVars }: { oper: Op
             break;
         case 'api':
             if (!oper.api) {
-                toast.error('请配置API接口');
+                toast.error(i18n.t('action.configureApiRequired'));
                 return;
             } else {
-                const apiUrl = replaceTemplate(oper.api, { ...(record || {}), ...(urlVars || {})}); 
+                const apiUrl = replaceTemplate(oper.api, { ...(record || {}), ...(urlVars || {}) });
                 const method = oper.method || 'GET';
                 const params = new URLSearchParams()
                 console.log('apiUrl', apiUrl)
-                const loadingId = toast.loading('正在处理中...', { position: 'top-center' });
+                const loadingId = toast.loading(i18n.t('action.processing'), { position: 'top-center' });
                 try {
                     const result = await apiRequest(apiUrl, method, params, record);
                     console.log('result', result)
                     oper.effects && ctx?.effects(oper.effects.split(","))
-                    toast.success('操作成功', {
+                    toast.success(i18n.t('action.operationSuccess'), {
                         position: 'top-center'
                     });
                     return result;
@@ -60,10 +62,10 @@ export async function handleOperation({ oper, ctx, record, urlVars }: { oper: Op
         case 'confirm':
             console.log('confirm =>', oper);
             break;
-        
+
         default:
             console.log('confirm =>', oper);
-            toast('执行操作', {
+            toast(i18n.t('action.executeOperation'), {
                 description: oper.label,
                 duration: 3000,
                 icon: '👏',
@@ -71,4 +73,3 @@ export async function handleOperation({ oper, ctx, record, urlVars }: { oper: Op
             });
     }
 }
-

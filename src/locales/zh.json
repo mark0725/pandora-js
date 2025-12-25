@@ -10,6 +10,13 @@
         "welcome": "欢迎",
         "error": "错误提示"
     },
+    "api": {
+        "errors": {
+            "exception": "发生异常",
+            "requestFailed": "请求失败",
+            "serverError": "服务器异常"
+        }
+    },
     "nav": {
         "home": "首页",
         "about": "关于",
@@ -41,6 +48,12 @@
         "selectNav": {
             "selectPlaceholder": "请选择"
         }
+    },
+    "action": {
+        "configureApiRequired": "请配置API接口",
+        "processing": "正在处理中...",
+        "operationSuccess": "操作成功",
+        "executeOperation": "执行操作"
     },
     "components": {
         "button": {

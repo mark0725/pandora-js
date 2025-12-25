@@ -10,6 +10,13 @@
         "welcome": "Welcome",
         "error": "Error"
     },
+    "api": {
+        "errors": {
+            "exception": "An exception occurred",
+            "requestFailed": "Request failed",
+            "serverError": "Server error"
+        }
+    },
     "nav": {
         "home": "Home",
         "about": "About",
@@ -41,6 +48,12 @@
         "selectNav": {
             "selectPlaceholder": "Please select"
         }
+    },
+    "action": {
+        "configureApiRequired": "Please configure API endpoint",
+        "processing": "Processing...",
+        "operationSuccess": "Operation successful",
+        "executeOperation": "Execute operation"
     },
     "components": {
         "button": {

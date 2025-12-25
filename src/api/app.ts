@@ -1,6 +1,6 @@
 import { AppConfig, PageLayoutConfig } from '../types'
 import { replaceTemplate } from '../lib/util_string'
-
+import { i18n } from '@/lib/i18n';
 export interface ApiResult {
     code: string   //OK: 成功
     message: string //全局错误信息
@@ -49,11 +49,11 @@ export async function apiRequest(url: string, method: string, params?: URLSearch
             window.location.href = '/auth/forbidden';
             return
         }
-        throw new Error("发生异常");
+        throw new Error(i18n.t("发生异常"));
     }
-    if (!json ) throw new Error("请求失败");
+    if (!json) throw new Error(i18n.t("请求失败"));
 
-    if (json.code !== 'OK') throw new Error(json.message||"服务器异常")
+    if (json.code !== 'OK') throw new Error(json.message || i18n.t("服务器异常"))
 
     const content = json.data?? {}
     return content
