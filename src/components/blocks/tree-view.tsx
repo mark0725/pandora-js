@@ -1,5 +1,6 @@
 "use client"
 import { useCallback, useEffect, useState, useContext, useRef, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ViewComponentProps } from './types'
 import { MappingDict, DataField } from '@/types'
 import { fetchPageMapping } from "@/api/page"
@@ -92,6 +93,7 @@ function convertToTree(data: any[], config: TreeViewConfig): [string[], Record<s
 }
 
 export function TreeView({ id, vo, dataTables, operations }: ViewComponentProps) {
+    const { t } = useTranslation()
     const ctx = useContext(PageModelContext);
     const pageViewCtx = useContext(PageViewContext);
     if (!ctx) throw new Error("must be used within PageModelProvider");
@@ -140,12 +142,12 @@ export function TreeView({ id, vo, dataTables, operations }: ViewComponentProps)
         },
     }), [itemsData])
 
-   
+
     const clickFeature: FeatureImplementation = {
         itemInstance: {
             getProps: ({ tree, item, prev }) => ({
                 ...prev?.(),
-               
+
                 onClick: (e: React.MouseEvent) => {
                     if (item.isFolder()) {
                         return
@@ -225,7 +227,7 @@ export function TreeView({ id, vo, dataTables, operations }: ViewComponentProps)
             }
         } catch (error) {
             console.error('Failed to load tree data:', error)
-            toast.error('加载树形数据失败')
+            toast.error(t('components.treeView.loadFailed'))
             setItems({
                 root: {
                     name: 'root',
@@ -346,7 +348,7 @@ export function TreeView({ id, vo, dataTables, operations }: ViewComponentProps)
 
     const hasData = Object.keys(itemsData).length > 1 || (itemsData.root?.children?.length ?? 0) > 0
     if (!hasData) {
-        return <div className="flex h-full items-center justify-center text-muted-foreground">暂无数据</div>
+        return <div className="flex h-full items-center justify-center text-muted-foreground">{t('components.treeView.noData')}</div>
     }
 
     const treeItems = tree.getItems()
@@ -390,7 +392,7 @@ export function TreeView({ id, vo, dataTables, operations }: ViewComponentProps)
                         }
                     }}
                     type="search"
-                    placeholder="Filter ..."
+                    placeholder={t('components.treeView.filterPlaceholder')}
                 />
                 <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-muted-foreground/80 peer-disabled:opacity-50">
                     <FilterIcon className="size-4" aria-hidden="true" />
@@ -398,7 +400,7 @@ export function TreeView({ id, vo, dataTables, operations }: ViewComponentProps)
                 {searchValue && (
                     <button
                         className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground focus:z-10 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                        aria-label="Clear search"
+                        aria-label={t('components.treeView.clearSearch')}
                         onClick={handleClearSearch}
                     >
                         <CircleXIcon className="size-4" aria-hidden="true" />
@@ -409,11 +411,11 @@ export function TreeView({ id, vo, dataTables, operations }: ViewComponentProps)
             <Tree indent={indent} tree={tree}>
                 {searchValue && filteredItems.length === 0 ? (
                     <p className="px-3 py-4 text-center text-sm">
-                        No items found for "{searchValue}"
+                        {t('components.treeView.noItemsFound', { keyword: searchValue })}
                     </p>
                 ) : treeItems.length === 0 ? (
                     <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                        No items to display
+                        {t('components.treeView.noItemsToDisplay')}
                     </p>
                 ) : (
                     treeItems.map((item) => {

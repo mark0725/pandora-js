@@ -1,4 +1,4 @@
-import { useCallback,useEffect, useState, useContext} from 'react'
+import { useCallback, useEffect, useState, useContext } from 'react'
 import { Button } from '@/components/ui/button'
 import { ViewComponentProps } from './types'
 import { MappingDict, DataField } from '@/types'
@@ -13,6 +13,7 @@ import { PageModelContext, PageViewContext } from "@/context/page-context"
 import { handleOperation } from "@/components/action"
 import { useParams } from "react-router-dom";
 import { useStore } from 'zustand'
+import { useTranslation } from 'react-i18next';
 
 export function FormPageView({ id, vo, dataTables, operations }: ViewComponentProps) {
     const ctx = useContext(PageModelContext);
@@ -20,7 +21,9 @@ export function FormPageView({ id, vo, dataTables, operations }: ViewComponentPr
     if (!ctx) throw new Error("must be used within PageModelProvider");
     if (!pageViewCtx) throw new Error("must be used within PageViewProvider");
 
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false)
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
     const [mappingDict, setMappingDict] = useState<MappingDict>()
     const dataTableId = vo.dataTable
 
@@ -33,15 +36,15 @@ export function FormPageView({ id, vo, dataTables, operations }: ViewComponentPr
     const setData = useStore(ctx.store, setDataSelector);
     const effects = useStore(ctx.store, effectsSelector);
     const viewState = useStore(ctx.store, viewStateSelector);
-   
+
     const apiUrl = vo.api
     const rowKey = vo.rowKey || 'id'
-    
+
     const dataTable = dataTables[dataTableId]
 
     let defaultValues: Record<string, any> = {}
     if (vo.mode === 'edit') {
-        defaultValues = ctx? ctx?.record||{} : {}
+        defaultValues = ctx ? ctx?.record || {} : {}
     }
 
     const urlVars: Record<string, string> = {}
@@ -59,8 +62,8 @@ export function FormPageView({ id, vo, dataTables, operations }: ViewComponentPr
         })
     }
     const [formData, setFormData] = useState<Record<string, any>>(defaultValues)
-  
-    
+
+
     // 加载数据&字典
     async function loadData() {
         setLoading(true)
@@ -75,11 +78,11 @@ export function FormPageView({ id, vo, dataTables, operations }: ViewComponentPr
             }
             if (dataTable.mappingApi) {
                 const mappingData = await fetchPageMapping(id, dataTable.mappingApi, params, urlVars)
-                setMappingDict(mappingData||{})
+                setMappingDict(mappingData || {})
             }
         } catch (error) {
             console.error(error)
-            toast.error('加载表单失败')
+            toast.error(t('common.loadFailed'))
         } finally {
             setLoading(false)
         }
@@ -126,8 +129,15 @@ export function FormPageView({ id, vo, dataTables, operations }: ViewComponentPr
             if (!fieldCfg) return null
             return (
                 <div key={child.id} className={cn("flex flex-col", getColSpanClass(child))}>
-                    <Label htmlFor={child.id} className="mb-1 font-normal">{fieldCfg.label}</Label>
-                    {renderEditElement(formData, { ...fieldCfg, ...child}, dataTables, onFieldValueChange, mappingDict)}
+                    <Label htmlFor={child.id} className="mb-1 font-normal">{fieldCfg.label}{fieldCfg.required && (<span className="text-destructive">*</span>)}</Label>
+                    {renderEditElement(formData, { ...fieldCfg, ...child }, dataTables, onFieldValueChange, mappingDict)}
+                    <p
+                        className="mt-2 text-xs peer-aria-invalid:text-destructive"
+                        role="alert"
+                        aria-live="polite"
+                    >
+                        {fieldErrors[fieldCfg.id] && t("form.invalid", { label: fieldCfg.label })}
+                    </p>
                 </div>
             )
         }
@@ -146,10 +156,10 @@ export function FormPageView({ id, vo, dataTables, operations }: ViewComponentPr
             return (
                 <Button
                     key={oper.id}
-                    variant={oper.level === 'primary' ? 'default' : oper.level === 'danger' ? 'destructive' : 'outline' }
+                    variant={oper.level === 'primary' ? 'default' : oper.level === 'danger' ? 'destructive' : 'outline'}
                     className="mr-1 px-3 gap-1 text-sm font-normal rounded-sm"
                     onClick={async () => {
-                        await handleOperation({ oper, ctx, record: formData, urlVars});
+                        await handleOperation({ oper, ctx, record: formData, urlVars });
                     }}
                 >
                     {oper.icon && getIcon(oper.icon)}
@@ -158,7 +168,7 @@ export function FormPageView({ id, vo, dataTables, operations }: ViewComponentPr
             )
         })
 
-        
+
         return (
             <div className="mt-4 space-x-2 flex justify-center">
                 {actions}
@@ -181,18 +191,18 @@ export function FormPageView({ id, vo, dataTables, operations }: ViewComponentPr
                         {vo.children.some((c: any) => c.object === 'Group') ? (
                             vo.children.map((c: any) => renderChild(c))
                         ) : (
-                                <div className={cn("grid  gap-4", `grid-cols-${vo.cols? vo.cols:1}`, vo.className)}>
+                            <div className={cn("grid  gap-4", `grid-cols-${vo.cols ? vo.cols : 1}`, vo.className)}>
                                 {vo.children.map((child: any) => renderChild(child))}
                             </div>
                         )}
                         {renderFooter()}
-                        
+
                     </form>
                 ) : (
-                    <div>未配置表单元素</div>
+                    <div>{t('components.formPageView.noElements')}</div>
                 )}
             </div>
-           
+
         </div>
     )
 }

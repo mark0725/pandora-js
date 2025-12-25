@@ -1,13 +1,14 @@
 import React, { useCallback, useMemo, useEffect, useState, useRef } from "react"
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Loadding } from "@/components/page-loadding"
 import { buildViewObject } from "@/components/page-builder"
 import { fetchPageConfig } from "@/api/page"
 import { MenuItem, PageModel } from "@/types"
 import { PageModelContext, PageViewContext } from "@/context/page-context"
-import { createPageStore, PageStore} from "@/store"
+import { createPageStore, PageStore } from "@/store"
 import { AlertCircle } from "lucide-react"
-import { createStore,useStore } from 'zustand'
+import { createStore, useStore } from 'zustand'
 import { replaceTemplate } from "@/lib/util_string"
 
 import {
@@ -25,7 +26,7 @@ interface PageviewProps {
 
 
 type PageStoreType = ReturnType<typeof createPageStore>
-const pageStoreMap = new Map<string, PageStoreType>() 
+const pageStoreMap = new Map<string, PageStoreType>()
 const MAX_STORE_SIZE = 10
 
 const cleanupOldStores = (currentPath: string) => {
@@ -50,8 +51,10 @@ const cleanupOldStores = (currentPath: string) => {
         })
     }
 }
-export function PanPageview(props: PageviewProps) { 
+
+export function PanPageview(props: PageviewProps) {
     const { id, path, menu } = props
+    const { t } = useTranslation()
     const [config, setConfig] = useState<PageModel>()
     const [loading, setLoading] = React.useState(true)
     const [dataLoading, setDataLoading] = React.useState(true)
@@ -59,20 +62,7 @@ export function PanPageview(props: PageviewProps) {
     const [visibleViews, setVisibleViews] = useState<string[]>([])
     const [record, setRecord] = useState<Record<string, any>>({})
     const pageViewRef = useRef(null);
-    // const [store] = useState(() => new PageDataStore()) 
 
-    // const pageStore = React.useMemo(createPageStore, [])
-
-    // const pageStore = useMemo(() => {
-    //     if (!pageStoreMap.has(path)) {
-    //         const newStore = createPageStore()
-    //         pageStoreMap.set(path, newStore)
-    //         cleanupOldStores(path)
-    //         return newStore
-    //     }
-
-    //     return pageStoreMap.get(path)!
-    // }, [path])
     if (!pageStoreMap.has(path)) {
         const newStore = createPageStore()
         pageStoreMap.set(path, newStore)
@@ -80,21 +70,20 @@ export function PanPageview(props: PageviewProps) {
     }
 
     const pageStore = pageStoreMap.get(path)!
-    
+
     // 使用 store 的方法
     const setPageDatas = useStore(pageStore, (state) => state.setDatas)
     const setEffects = useStore(pageStore, (state) => state.setEffects)
     const fetchData = useStore(pageStore, (state) => state.fetchData)
 
-    // const setEffects = useStore((state) => state.setEffects)
     const urlParams = useParams();
     const urlVars: Record<string, string> = {}
     Object.entries(urlParams).forEach(([key, value]) => {
         if (value && key !== '*') urlVars[key] = value
     });
 
-    if (menu.url==undefined||menu.url=="") {
-        return <div className="p-4 text-red-500">{error || '页面加载失败'}</div>
+    if (menu.url == undefined || menu.url == "") {
+        return <div className="p-4 text-red-500">{error || t('app.pageLoadFailed')}</div>
     }
 
     async function loadConfigData() {
@@ -109,7 +98,7 @@ export function PanPageview(props: PageviewProps) {
             setEffects(keys)
             setConfig(pageConfig)
         } catch (error) {
-            setError('加载配置信息失败')
+            setError(t('app.configLoadFailed'))
             console.error(error)
         } finally {
             setLoading(false)
@@ -136,15 +125,15 @@ export function PanPageview(props: PageviewProps) {
                     data.api && await fetchData(data.id, replaceTemplate(data.api, urlVars))
                 }
             } catch (error) {
-                setError('加载配置信息失败')
+                setError(t('app.configLoadFailed'))
                 console.error(error)
             } finally {
                 setDataLoading(false)
             }
         }
-      
+
         loadData()
-        
+
     }, [id, config])
 
     if (loading) {
@@ -153,16 +142,16 @@ export function PanPageview(props: PageviewProps) {
 
     if (error || !config) {
         return (
-        <div className="flex h-full flex-1 p-4 items-center justify-center">
-            <Alert variant="destructive" className="w-300">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>错误提示</AlertTitle>
-                <AlertDescription> {error || '页面加载失败'} </AlertDescription>
-            </Alert>
-        </div>)
+            <div className="flex h-full flex-1 p-4 items-center justify-center">
+                <Alert variant="destructive" className="w-300">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>{t('common.error')}</AlertTitle>
+                    <AlertDescription> {error || t('app.pageLoadFailed')} </AlertDescription>
+                </Alert>
+            </div>)
     }
 
-    const { pageView, dataSet, operations} = config || {}
+    const { pageView, dataSet, operations } = config || {}
 
     // 触发显示其他 view
     const showView = (viewName: string, data?: Record<string, any>) => {
@@ -184,25 +173,25 @@ export function PanPageview(props: PageviewProps) {
     }
 
     return (
-        <PageModelContext.Provider value={{ pageModel: config, store:pageStore, record, buildViewObject, showView, closeView, effects, container: pageViewRef.current }}>
-                <div className="h-full w-full flex flex-col overflow-hidden relative" ref={pageViewRef}> 
-                    {dataLoading && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                            <Loadding />
-                        </div>
-                    )}
-                    {visibleViews.map((vn) => {
-                        const viewConfig = pageView[vn]
-                        if (!viewConfig) return null
-                        if (typeof viewConfig !== "object") return null
-                        let prop = { id: vn, vo: viewConfig, dataTables: dataSet, operations, key: vn }
-                        return (
-                            <PageViewContext.Provider value={{ id: vn, viewConfig, }} key={"pbc:" + vn + ":"}>
-                                {buildViewObject(prop)}
-                            </PageViewContext.Provider>
-                        )
-                    })}
-                </div>
+        <PageModelContext.Provider value={{ pageModel: config, store: pageStore, record, buildViewObject, showView, closeView, effects, container: pageViewRef.current }}>
+            <div className="h-full w-full flex flex-col overflow-hidden relative" ref={pageViewRef}>
+                {dataLoading && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <Loadding />
+                    </div>
+                )}
+                {visibleViews.map((vn) => {
+                    const viewConfig = pageView[vn]
+                    if (!viewConfig) return null
+                    if (typeof viewConfig !== "object") return null
+                    let prop = { id: vn, vo: viewConfig, dataTables: dataSet, operations, key: vn }
+                    return (
+                        <PageViewContext.Provider value={{ id: vn, viewConfig, }} key={"pbc:" + vn + ":"}>
+                            {buildViewObject(prop)}
+                        </PageViewContext.Provider>
+                    )
+                })}
+            </div>
         </PageModelContext.Provider>
     )
 }

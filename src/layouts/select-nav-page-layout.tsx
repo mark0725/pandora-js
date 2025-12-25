@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
     useNavigate,
     Routes,
@@ -27,6 +28,7 @@ interface NavPageLayoutProps {
 }
 
 export function SelectNavPageLayout(props: NavPageLayoutProps) {
+    const { t } = useTranslation()
     const { id, path } = props
     const navigate = useNavigate()
     const location = useLocation()
@@ -35,7 +37,7 @@ export function SelectNavPageLayout(props: NavPageLayoutProps) {
     const [loading, setLoading] = React.useState(true)
     const [error, setError] = React.useState<string>('')
     // 当前路径下的下拉选项值，如 /nav-page/:paramValue/...
-    const paramValue = location.pathname.substring(path.length + 1).split("/")[0] 
+    const paramValue = location.pathname.substring(path.length + 1).split("/")[0]
 
 
     // 根据 id 和 paramValue 重新加载页面配置信息
@@ -55,18 +57,18 @@ export function SelectNavPageLayout(props: NavPageLayoutProps) {
             })
             .catch((e) => {
                 console.error(e)
-                setError('加载配置信息失败')
+                setError(t("app.configLoadFailed"))
                 setLoading(false)
             })
-    }, [id, paramValue])
+    }, [id, paramValue, t])
 
 
     if (loading) {
-        return ( <Loadding/> )
+        return (<Loadding />)
     }
 
     if (error || !config) {
-        return <div className="p-4 text-red-500">{error || '页面加载失败'}</div>
+        return <div className="p-4 text-red-500">{error || t("app.pageLoadFailed")}</div>
     }
 
     function getParamValue() {
@@ -90,7 +92,7 @@ export function SelectNavPageLayout(props: NavPageLayoutProps) {
     // 渲染下拉选择器
     function renderSelect() {
         if (!config?.select) return null
-        
+
         const paramValue = getParamValue()
         console.log("paramValue:", paramValue)
         return (
@@ -101,12 +103,12 @@ export function SelectNavPageLayout(props: NavPageLayoutProps) {
                 }}
             >
                 <SelectTrigger className="h-8 min-w-[100px] max-w-[120px] text-sm text-center text-gray-600 border-0 shadow-none focus:ring-0 focus:outline-non hover:bg-gray-100 mr-2">
-                    <SelectValue placeholder="请选择" />
+                    <SelectValue placeholder={t("layout.selectNav.selectPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                {config.select.items.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
+                    {config.select.items.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
                 </SelectContent>
             </Select>
         )
@@ -132,11 +134,11 @@ export function SelectNavPageLayout(props: NavPageLayoutProps) {
                                 key={targetPath}
                                 onClick={() => handleSelect(m.id)}
                                 className={`relative inline-flex items-center h-full px-4 text-sm ${isActive
-                                        ? "bg-blue-100/50 border-b-2 border-blue-600 text-blue-600"
-                                        : "border-b-2 border-transparent text-gray-600 hover:bg-gray-100"
+                                    ? "bg-blue-100/50 border-b-2 border-blue-600 text-blue-600"
+                                    : "border-b-2 border-transparent text-gray-600 hover:bg-gray-100"
                                     }`}
                             >
-                                {m.ico&&getIcon(m.ico)}
+                                {m.ico && getIcon(m.ico)}
                                 {m.title}
                             </button>
                         )
@@ -146,9 +148,9 @@ export function SelectNavPageLayout(props: NavPageLayoutProps) {
             {/* 子路由内容出口 */}
             <div className="flex-1 h-full  p-1 relative mb-0 overflow-hidden">
                 <Routes>
-                    <Route index element={<Navigate to={config?.select?.value|| "default"} replace />} />
-                    <Route path={`:${config?.select?.param|| "id"}/*`}>
-                        <Route index element={ <Navigate to={config.menu?.[0]?.id || "home"} replace /> } />
+                    <Route index element={<Navigate to={config?.select?.value || "default"} replace />} />
+                    <Route path={`:${config?.select?.param || "id"}/*`}>
+                        <Route index element={<Navigate to={config.menu?.[0]?.id || "home"} replace />} />
                         {config.menu?.map((item: MenuItem) => (
                             <Route key={`${id}:${item.id}`} path={item.id} element={renderContent(`${path}/${getParamValue()}/${item.id}`, item)} />
                         ))}

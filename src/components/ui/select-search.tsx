@@ -4,6 +4,7 @@ import { Command as CommandPrimitive, useCommandState } from "cmdk"
 import { CheckIcon, ChevronDownIcon } from "lucide-react"
 import * as React from "react"
 import { useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import {
     Command,
@@ -123,7 +124,7 @@ export function SelectSearch({
     disabled,
     defaultOptions: arrayDefaultOptions = [],
     options: arrayOptions,
-    placeholder = "Select option...",
+    placeholder,
     loadingIndicator,
     emptyIndicator,
     delay = 300,
@@ -138,6 +139,7 @@ export function SelectSearch({
     commandProps,
     inputProps,
 }: SelectProps) {
+    const { t } = useTranslation()
     const inputRef = React.useRef<HTMLInputElement>(null)
     const dropdownRef = React.useRef<HTMLDivElement>(null)
     const [internalOpen, setInternalOpen] = React.useState(defaultOpen)
@@ -286,7 +288,7 @@ export function SelectSearch({
                     handleSelect(newOption)
                 }}
             >
-                {`Create "${inputValue}"`}
+                {t("components.selectSearch.create", { value: inputValue })}
             </CommandItem>
         )
 
@@ -330,7 +332,7 @@ export function SelectSearch({
                 )}
             >
                 <span className={cn(!selected && "text-muted-foreground")}>
-                    {selected ? selected.label : placeholder}
+                    {selected ? selected.label : (placeholder || t("components.selectSearch.placeholder"))}
                 </span>
                 <ChevronDownIcon className={cn("ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform", open && "rotate-180")} />
             </button>
@@ -382,14 +384,14 @@ export function SelectSearch({
                                 setInputValue(value)
                                 inputProps?.onValueChange?.(value)
                             }}
-                            placeholder="Search..."
+                            placeholder={t("components.selectSearch.searchPlaceholder")}
                             className={cn("border-b", inputProps?.className)}
                         />
 
                         <CommandList className="max-h-[300px] overflow-y-auto">
                             {isLoading ? (
                                 <div className="py-6 text-center text-sm">
-                                    {loadingIndicator || "Loading..."}
+                                    {loadingIndicator || t("common.loading")}
                                 </div>
                             ) : (
                                 <>
@@ -413,6 +415,7 @@ export function SelectSearch({
                                                         option.disable &&
                                                         "pointer-events-none cursor-not-allowed opacity-50"
                                                     )}
+                                                    keywords={[option.label]}
                                                 >
                                                     <CheckIcon
                                                         className={cn(

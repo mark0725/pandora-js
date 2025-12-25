@@ -9,10 +9,13 @@ import { cn } from "@/lib/utils"
 import {ApiResult} from "@/api/app"
 import { useAuthStore } from "@/store"
 import { AppConfig, User } from '@/types'
+import { useTranslation } from 'react-i18next';
 
 export function LoginPage({ appConfig, className, ...props }: { appConfig: AppConfig }&React.ComponentProps<"div">) {
     const navigate = useNavigate()
     const setAuthed = useAuthStore(s => s.setAuthed)
+    const { t } = useTranslation();
+
     
     // 表单状态
     const [username, setUsername] = React.useState("")

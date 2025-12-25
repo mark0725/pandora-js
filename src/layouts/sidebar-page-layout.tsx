@@ -6,15 +6,16 @@ import {
     Navigate,
     useLocation
 } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { fetchPageLayoutConfig } from "@/api/app"
 import {
-    SidebarProvider, 
-    SidebarTrigger, 
+    SidebarProvider,
+    SidebarTrigger,
     Sidebar,
     SidebarContent,
     SidebarFooter,
     SidebarGroup,
-    SidebarHeader ,
+    SidebarHeader,
     SidebarMenu,
     SidebarMenuSub,
     SidebarMenuSubItem,
@@ -39,6 +40,7 @@ export function SidebarPageLayout(props: SidebarLayoutProps) {
     const { id, path } = props
     const navigate = useNavigate()
     const location = useLocation()
+    const { t } = useTranslation()
     // const routeParams = useParams() // 这里可以获取路由参数
     const [config, setConfig] = useState<PageLayoutConfig>()
     const [loading, setLoading] = React.useState(true)
@@ -52,17 +54,17 @@ export function SidebarPageLayout(props: SidebarLayoutProps) {
             setLoading(false)
         }).catch((e) => {
             console.error(e)
-            setError('加载配置信息失败')
+            setError(t('app.configLoadFailed'))
             setLoading(false)
         })
-    }, [id])
+    }, [id, t])
 
     if (loading) {
         return (<Loadding />)
     }
 
     if (error || !config) {
-        return <div className="p-4 text-red-500">{error || '页面加载失败'}</div>
+        return <div className="p-4 text-red-500">{error || t('app.pageLoadFailed')}</div>
     }
 
     // 点击二级菜单时，若存在下拉参数则插入到路径里
@@ -79,7 +81,7 @@ export function SidebarPageLayout(props: SidebarLayoutProps) {
 
 
     return (
-        
+
         <div className="flex h-full">
             <SidebarProvider defaultOpen={true}>
                 <Sidebar className="relative w-60">
@@ -92,14 +94,14 @@ export function SidebarPageLayout(props: SidebarLayoutProps) {
                                 const targetPath = `${path}/${m.id}`
                                 console.log("targetPath", targetPath)
                                 const isActive = location.pathname.startsWith(targetPath)
-                                if (m.children && m.children?.length > 0){
+                                if (m.children && m.children?.length > 0) {
                                     return (
-                                        <Collapsible key={`${id}:${m.id}`}  defaultOpen={isActive} className="group/collapsible">
+                                        <Collapsible key={`${id}:${m.id}`} defaultOpen={isActive} className="group/collapsible">
                                             <SidebarMenuItem>
-                                                
+
                                                 <CollapsibleTrigger className="flex justify-between h-full px-4 py-2 text-sm [&[data-state=open]>svg]:rotate-180 w-full">
                                                     <div className="flex-1 text-left h-full text-sm inline-flex items-center ">
-                                                        {m.ico&&getIcon(m.ico)}
+                                                        {m.ico && getIcon(m.ico)}
                                                         {m.title}
                                                     </div>
                                                     <ChevronDownIcon
@@ -107,26 +109,26 @@ export function SidebarPageLayout(props: SidebarLayoutProps) {
                                                         className="mt-1 shrink-0 opacity-60 transition-transform duration-200"
                                                         aria-hidden="true"
                                                     />
-                                                    
+
                                                 </CollapsibleTrigger>
                                                 <CollapsibleContent>
                                                     <SidebarMenuSub className="p-0">
                                                         {m.children.map((submenu: MenuItem) => {
-                                                            const isActive = location.pathname.startsWith(targetPath+"/"+submenu.id)
+                                                            const isActive = location.pathname.startsWith(targetPath + "/" + submenu.id)
                                                             return (
-                                                                <SidebarMenuSubItem key={`${id}:${m.id}:${submenu.id}`}  className={`h-8 ${isActive ? "bg-blue-100 /50 border-r-2 border-blue-600 text-blue-600 rounded-none" : "border-r-2 border-transparent text-gray-600 hover:bg-gray-100 rounded-none"}`}>
+                                                                <SidebarMenuSubItem key={`${id}:${m.id}:${submenu.id}`} className={`h-8 ${isActive ? "bg-blue-100 /50 border-r-2 border-blue-600 text-blue-600 rounded-none" : "border-r-2 border-transparent text-gray-600 hover:bg-gray-100 rounded-none"}`}>
                                                                     <button onClick={() => handleSelect(m.id, submenu.id)}
-                                                                                className={`relative inline-flex items-center w-full h-full px-4 text-sm`}>
-                                                                        {submenu.ico&&getIcon(submenu.ico)}
+                                                                        className={`relative inline-flex items-center w-full h-full px-4 text-sm`}>
+                                                                        {submenu.ico && getIcon(submenu.ico)}
                                                                         {submenu.title}
                                                                     </button>
                                                                 </SidebarMenuSubItem>
                                                             )
 
                                                         })}
-                                                        
+
                                                     </SidebarMenuSub>
-                                                </CollapsibleContent> 
+                                                </CollapsibleContent>
                                             </SidebarMenuItem>
                                         </Collapsible>
                                     )
@@ -144,7 +146,7 @@ export function SidebarPageLayout(props: SidebarLayoutProps) {
                                                     : "border-r-2 border-transparent text-gray-600 hover:bg-gray-100 rounded-none"
                                                     }`}
                                             >
-                                                {m.ico&&getIcon(m.ico)}
+                                                {m.ico && getIcon(m.ico)}
                                                 {m.title}
                                             </button>
                                         </SidebarMenuButton>
@@ -156,25 +158,25 @@ export function SidebarPageLayout(props: SidebarLayoutProps) {
                     </SidebarContent>
                     <SidebarFooter />
                 </Sidebar>
-            <div className="h-full flex-1 p-1 relative mb-0 overflow-hidden">
-                {/* <SidebarTrigger /> */}
-                <Routes>
-                    <Route index element={<Navigate to="home" replace />} />
-                    {config?.menu?.map((item: MenuItem) => {
-                        if (item.children && item.children?.length > 0){
-                            return (
-                                <Route path={`${item.id}/*`} element={renderContent(`${path}/${item.id}`, item)} >
-                                    {item.children?.map((subitem: MenuItem) => (
-                                        <Route key={`${id}:${item.id}:${subitem.id}`} path={subitem.id} element={renderContent(`${path}/${item.id}/${subitem.id}`, subitem)} />
-                                    ))}
-                                </Route>
-                            )
-                        } else {
-                            return <Route key={`${id}:${item.id}`} path={item.id} element={renderContent(`${path}/${item.id}`, item)} />
-                        }
-                    })}
-                </Routes>
-            </div>
+                <div className="h-full flex-1 p-1 relative mb-0 overflow-hidden">
+                    {/* <SidebarTrigger /> */}
+                    <Routes>
+                        <Route index element={<Navigate to="home" replace />} />
+                        {config?.menu?.map((item: MenuItem) => {
+                            if (item.children && item.children?.length > 0) {
+                                return (
+                                    <Route path={`${item.id}/*`} element={renderContent(`${path}/${item.id}`, item)} >
+                                        {item.children?.map((subitem: MenuItem) => (
+                                            <Route key={`${id}:${item.id}:${subitem.id}`} path={subitem.id} element={renderContent(`${path}/${item.id}/${subitem.id}`, subitem)} />
+                                        ))}
+                                    </Route>
+                                )
+                            } else {
+                                return <Route key={`${id}:${item.id}`} path={item.id} element={renderContent(`${path}/${item.id}`, item)} />
+                            }
+                        })}
+                    </Routes>
+                </div>
             </SidebarProvider>
         </div>
     )

@@ -6,7 +6,7 @@ import { ViewComponentProps, TableBodyColumn } from './types'
 import { MappingDict, ViewObject } from '@/types'
 import { PageStore } from '@/store'
 import { fetchPageMapping } from "@/api/page"
-import { apiGet} from "@/api/app"
+import { apiGet } from "@/api/app"
 import { replaceTemplate } from "@/lib/util_string"
 import { RiEqualizerLine } from '@remixicon/react'
 import { renderTableElement } from './view-component'
@@ -19,7 +19,7 @@ import { useParams } from "react-router-dom";
 import { useStore } from 'zustand'
 import { Loadding } from "@/components/page-loadding"
 import { ButtonGroup } from "@/components/ui/button-group"
-import { base64UrlEncode} from "@/lib/util_string"
+import { base64UrlEncode } from "@/lib/util_string"
 import {
     Popover,
     PopoverContent,
@@ -34,6 +34,7 @@ import {
     SelectValue
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+import { useTranslation } from 'react-i18next';
 
 type PageBarSate = {
     page_count: number
@@ -48,12 +49,13 @@ type PageBarConfig = {
     selected_pages: number[]
 }
 
-export function TablePageView({ id, vo, dataTables, operations }: ViewComponentProps&React.ComponentProps<"div">) {
+export function TablePageView({ id, vo, dataTables, operations }: ViewComponentProps & React.ComponentProps<"div">) {
     const ctx = useContext(PageModelContext);
     const pageViewCtx = useContext(PageViewContext);
     if (!ctx) throw new Error("must be used within PageModelProvider");
     if (!pageViewCtx) throw new Error("must be used within PageViewProvider");
 
+    const { t } = useTranslation();
     const urlParams = useParams();
     const urlVars: Record<string, string> = {}
     Object.entries(urlParams).forEach(([key, value]) => {
@@ -61,8 +63,8 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
     });
     // const [tableData, setData] = useState<RowData[]>([])
 
-    const viewDataStoreId = vo.dataStore||vo.id
-    const viewParamStoreId = vo.paramsStore||vo.id+"-params"
+    const viewDataStoreId = vo.dataStore || vo.id
+    const viewParamStoreId = vo.paramsStore || vo.id + "-params"
     const currentPath = window.location.pathname
     const tableDataSelector = useCallback((state: any) => state.data[vo.id], [vo.id, currentPath]);
     const setDataSelector = useCallback((state: any) => state.setData, [vo.id]);
@@ -113,7 +115,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
             const params = new URLSearchParams(window.location.search)
             params.set('page', String(page))
             params.set('size', String(pageSize))
-           
+
             console.log("viewParams:", viewParams)
             if (viewParams) {
                 Object.keys(viewParams).forEach((k) => {
@@ -122,7 +124,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
                         return
                     }
 
-                    if(k==='filter') {
+                    if (k === 'filter') {
                         //base64
                         params.set(k, base64UrlEncode(JSON.stringify(val)))
                     } else {
@@ -190,7 +192,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
         )
     }
 
-    
+
     function getColStyle(col: TableBodyColumn, head: boolean): CSSProperties {
         const style: CSSProperties = {}
         if (col.fixed === 'left') {
@@ -258,18 +260,18 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
     function renderTableBody() {
         if (loading) {
             return (
-                 <TableRow className="h-12">
+                <TableRow className="h-12">
                     <TableCell colSpan={mergedColumns.length} className="text-center">
-                         <Loadding />
+                        <Loadding />
                     </TableCell>
                 </TableRow>
             )
         }
-        if ((!tableData||!tableData.length) && !loading) {
+        if ((!tableData || !tableData.length) && !loading) {
             return (
                 <TableRow className="h-12">
                     <TableCell colSpan={mergedColumns.length} className="text-center">
-                        暂无数据
+                        {t('components.tablePageView.noData')}
                     </TableCell>
                 </TableRow>
             )
@@ -295,7 +297,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
                             const comps = col.components?.split(',')
                             return (
                                 <TableCell
-                                    key={"oper:"+rowId}
+                                    key={"oper:" + rowId}
                                     style={style}
                                     className="pt-1 pb-1 space-x-2 whitespace-nowrap overflow-hidden text-ellipsis"
                                 >
@@ -304,7 +306,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
                                         if (!oper) return null
                                         return (
                                             <Button
-                                                key={"oper:" +rowId+":"+c}
+                                                key={"oper:" + rowId + ":" + c}
                                                 variant={oper.level === 'danger' ? 'destructive' : 'secondary'}
                                                 size="sm"
                                                 onClick={async () => {
@@ -358,7 +360,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
     function renderPagination() {
         if (!tableFoot?.show) return null
         const totalPages = Math.ceil(total / pageSize) || 1
-        const currCount = tableData? tableData.length:0
+        const currCount = tableData ? tableData.length : 0
         const switchPageArr = (String(tableFoot.switchPage) || '')
             .split(',')
             .map(x => x.trim())
@@ -367,10 +369,15 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
         return (
             <div className="mt-1 flex items-center justify-between border-t p-1">
                 <div className=" text-gray-600">
-                    第 {page}/{totalPages} 页 / 当前页 {currCount} 条 / 总共 {total} 条
+                    {t('components.tablePageView.pagination.pageInfo', {
+                        current: page,
+                        total: totalPages,
+                        currentCount: currCount,
+                        totalCount: total
+                    })}
                 </div>
                 <div className="flex items-center space-x-2 text-gray-600">
-                    <span>每页显示</span>
+                    <span>{t('components.tablePageView.pagination.perPage')}</span>
                     <Select
                         value={String(pageSize)}
                         onValueChange={(val) => {
@@ -402,7 +409,7 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
                     >
                         ›
                     </Button>
-                    <span>前往</span>
+                    <span>{t('components.tablePageView.pagination.goTo')}</span>
                     <Input
                         className="w-14 h-8"
                         value={goPage}
@@ -411,14 +418,14 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
                             if (e.key === 'Enter') handleGoPage()
                         }}
                     />
-                    <span>页</span>
+                    <span>{t('components.tablePageView.pagination.page')}</span>
                 </div>
             </div>
         )
     }
-   
+
     return (
-        
+
         <div className="p-1 pb-0 flex flex-col w-full h-full bg-whit text-xs font-normal text-gray-700 overflow-hidden">
             <div className="flex">
                 {renderTableToolBar()}
@@ -452,4 +459,3 @@ export function TablePageView({ id, vo, dataTables, operations }: ViewComponentP
         </div>
     )
 }
-

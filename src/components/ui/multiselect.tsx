@@ -4,6 +4,7 @@ import { Command as CommandPrimitive, useCommandState } from "cmdk";
 import { XIcon } from "lucide-react";
 import * as React from "react";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/registry/default/lib/utils";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/registry/default/ui/command";
@@ -183,6 +184,7 @@ const MultipleSelector = ({
   inputProps,
   hideClearAllButton = false,
 }: MultipleSelectorProps) => {
+  const { t } = useTranslation();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [open, setOpen] = React.useState(false);
   const [onScrollbar, setOnScrollbar] = React.useState(false);
@@ -349,7 +351,7 @@ const MultipleSelector = ({
           onChange?.(newOptions);
         }}
       >
-        {`Create "${inputValue}"`}
+        {t("components.multipleSelector.create", { value: inputValue })}
       </CommandItem>
     );
 
@@ -400,6 +402,9 @@ const MultipleSelector = ({
     // Using default filter in `cmdk`. We don&lsquo;t have to provide it.
     return undefined;
   }, [creatable, commandProps?.filter]);
+
+  // 计算实际使用的 placeholder
+  const actualPlaceholder = placeholder ?? t("components.multipleSelector.placeholder");
 
   return (
     <Command
@@ -455,7 +460,7 @@ const MultipleSelector = ({
                     e.stopPropagation();
                   }}
                   onClick={() => handleUnselect(option)}
-                  aria-label="Remove"
+                  aria-label={t("components.multipleSelector.remove")}
                 >
                   <XIcon size={14} aria-hidden="true" />
                 </button>
@@ -485,7 +490,7 @@ const MultipleSelector = ({
               }
               inputProps?.onFocus?.(event);
             }}
-            placeholder={hidePlaceholderWhenSelected && selected.length !== 0 ? "" : placeholder}
+            placeholder={hidePlaceholderWhenSelected && selected.length !== 0 ? "" : actualPlaceholder}
             className={cn(
               "placeholder:text-muted-foreground/70 flex-1 bg-transparent outline-hidden disabled:cursor-not-allowed",
               {
@@ -508,9 +513,9 @@ const MultipleSelector = ({
                 disabled ||
                 selected.length < 1 ||
                 selected.filter((s) => s.fixed).length === selected.length) &&
-                "hidden",
+              "hidden",
             )}
-            aria-label="Clear all"
+            aria-label={t("components.multipleSelector.clearAll")}
           >
             <XIcon size={16} aria-hidden="true" />
           </button>
@@ -553,6 +558,7 @@ const MultipleSelector = ({
                             <CommandItem
                               key={option.value}
                               value={option.value}
+                              keywords={[option.label]}
                               disabled={option.disable}
                               onMouseDown={(e) => {
                                 e.preventDefault();
@@ -571,7 +577,7 @@ const MultipleSelector = ({
                               className={cn(
                                 "cursor-pointer",
                                 option.disable &&
-                                  "pointer-events-none cursor-not-allowed opacity-50",
+                                "pointer-events-none cursor-not-allowed opacity-50",
                               )}
                             >
                               {option.label}

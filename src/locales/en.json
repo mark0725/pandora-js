@@ -1,0 +1,153 @@
+{
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "loading": "Loading...",
+        "loadFailed": "Failed to load",
+        "success": "Success",
+        "welcome": "Welcome",
+        "error": "Error"
+    },
+    "nav": {
+        "home": "Home",
+        "about": "About",
+        "dashboard": "Dashboard"
+    },
+    "auth": {
+        "login": "Login",
+        "logout": "Logout",
+        "signup": "Sign Up"
+    },
+    "app": {
+        "configLoadFailed": "Failed to load configuration",
+        "pageLoadFailed": "Failed to load page"
+    },
+    "user": {
+        "center": "User Center"
+    },
+    "form": {
+        "required": "Required",
+        "invalid": "Invalid content: {{label}}"
+    },
+    "layout": {
+        "notifications": "Notifications",
+        "drawer": {
+            "title": "Title",
+            "subtitle": "Subtitle",
+            "confirm": "Confirm"
+        },
+        "selectNav": {
+            "selectPlaceholder": "Please select"
+        }
+    },
+    "components": {
+        "button": {
+            "submit": "Submit",
+            "search": "Search",
+            "reset": "Reset"
+        },
+        "dialog": {
+            "confirm": "Are you sure?",
+            "deleteConfirm": "Are you sure you want to delete this item?"
+        },
+        "cardBoard": {
+            "allTag": "All",
+            "more": "More",
+            "searchPlaceholder": "Search",
+            "searchResultsFor": "Search results for \"{{keyword}}\"",
+            "noResults": "No results found",
+            "otherGroup": "Other"
+        },
+        "selectSearch": {
+            "placeholder": "Select option...",
+            "searchPlaceholder": "Search...",
+            "create": "Create \"{{value}}\""
+        },
+        "multipleSelector": {
+            "placeholder": "Select options...",
+            "create": "Create \"{{value}}\"",
+            "remove": "Remove",
+            "clearAll": "Clear all"
+        },
+        "filterBar": {
+            "addFilter": "Add filter",
+            "removeFilter": "Remove filter",
+            "clear": "Clear",
+            "noContent": "No content",
+            "errors": {
+                "noOperation": "No operation found for id: {{id}}"
+            },
+            "operators": {
+                "like": "Fuzzy match",
+                "equals": "Equals",
+                "notEquals": "Not equals",
+                "greaterThan": "Greater than",
+                "lessThan": "Less than",
+                "greaterThanOrEquals": "Greater than or equals",
+                "lessThanOrEquals": "Less than or equals",
+                "between": "Between",
+                "isNull": "Is null",
+                "isNotNull": "Is not null",
+                "contains": "Contains",
+                "notContains": "Not contains"
+            }
+        },
+        "formPageView": {
+            "noElements": "No form elements configured"
+        },
+        "navBoard": {
+            "noData": "No data available",
+            "viewDetails": "View Details"
+        },
+        "tablePageView": {
+            "noData": "No data available",
+            "pagination": {
+                "pageInfo": "Page {{current}}/{{total}} / Current page {{currentCount}} items / Total {{totalCount}} items",
+                "perPage": "Per page",
+                "goTo": "Go to",
+                "page": "page"
+            }
+        },
+        "treeView": {
+            "loadFailed": "Failed to load tree data",
+            "noData": "No data available",
+            "filterPlaceholder": "Filter...",
+            "clearSearch": "Clear search",
+            "noItemsFound": "No items found for \"{{keyword}}\"",
+            "noItemsToDisplay": "No items to display"
+        },
+        "viewComponent": {
+            "noContent": "No content",
+            "invalidTimeFormat": "Invalid time format"
+        },
+        "tableSetting": {
+            "tabs": {
+                "tableOptions": "Table Options",
+                "columnOptions": "Column Options"
+            },
+            "rowHeight": {
+                "label": "Row Height",
+                "narrow": "Narrow",
+                "normal": "Normal",
+                "wide": "Wide"
+            },
+            "fontSize": {
+                "label": "Font Size",
+                "small": "Small",
+                "medium": "Medium",
+                "large": "Large",
+                "extraLarge": "Extra Large"
+            },
+            "columnWidth": {
+                "label": "Column Width",
+                "auto": "Auto",
+                "fixed": "Fixed"
+            },
+            "columnSetting": {
+                "hint": "Drag to reorder columns, toggle switch to show/hide columns"
+            }
+        }
+    }
+}

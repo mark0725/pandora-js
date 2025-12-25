@@ -1,4 +1,5 @@
-import React, {CSSProperties} from "react"
+import React, { CSSProperties } from "react"
+import { useTranslation } from "react-i18next"
 import { DataField, MappingDict, DataTable, DictItem } from "@/types"
 import { TableBodyColumn } from "./types"
 import { Badge } from "@/components/ui/badge"
@@ -7,9 +8,29 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { InputTag } from "@/components/ui/input-tag";
 import MultipleSelector, { Option } from "@/components/ui/multiselect"
-import { SelectSearch, Option as SearchOption} from "@/components/ui/select-search"
+import { SelectSearch, Option as SearchOption } from "@/components/ui/select-search"
 import { MinusIcon, PlusIcon } from "lucide-react"
-import { Button, Group, Input as NumberInput,  NumberField } from "react-aria-components"
+import { Button, Group, Input as NumberInput, NumberField } from "react-aria-components"
+import { CalendarIcon } from "lucide-react"
+import {
+    DatePicker,
+    Dialog,
+    Popover,
+} from "react-aria-components"
+import { Calendar } from "@/components/ui/calendar-rac"
+import { DateInput } from "@/components/ui/datefield-rac"
+import { HelpCircle, InfoIcon } from "lucide-react"
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from "@/components/ui/input-group"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 import {
     Select,
@@ -39,7 +60,7 @@ function lightenColor(hex: string, amount = 0.7) {
 
 function formatDateTime(value: string, fmt: string): string {
     // 假设 value 始终是14位的时间字符串
-    if (value.length !== 14) throw new Error('时间格式不正确');
+    if (value.length !== 14) throw new Error('Invalid time format');
     const year = value.slice(0, 4);
     const month = value.slice(4, 6);
     const day = value.slice(6, 8);
@@ -53,7 +74,7 @@ function formatDateTime(value: string, fmt: string): string {
         .replace('HH', hour)
         .replace('mm', minute)
         .replace('ss', second);
-  }
+}
 
 export function renderTableElement(fieldValue: any, field: TableBodyColumn, dataTables?: Record<string, DataTable>, mappingDict?: MappingDict) {
     // 字典项渲染函数
@@ -61,26 +82,26 @@ export function renderTableElement(fieldValue: any, field: TableBodyColumn, data
         if (!source || !mappingDict?.[source]) return value
         const entry = mappingDict[source].items[value]
         if (!entry) return value
-        
+
         let variant: "default" | "secondary" | "outline" | "destructive" = "default"
         if (entry.style === "secondary") variant = "secondary"
         if (entry.style === "outline") variant = "outline"
-       
-        const style: CSSProperties = {  }
+
+        const style: CSSProperties = {}
         if (entry.color) {
             if (entry.style === "outline") {
                 style.color = entry.color
                 style.borderColor = entry.color
             } else if (entry.style === "secondary") {
                 style.color = entry.color
-                style.backgroundColor = entry.color? lightenColor(entry.color, 0.7): entry.color
+                style.backgroundColor = entry.color ? lightenColor(entry.color, 0.7) : entry.color
                 style.borderRadius = "2px"
             } else {
                 style.backgroundColor = entry.color
                 style.color = "white"
             }
         }
-        
+
         if (entry.color) {
             return (
                 <Badge key={value} variant={variant} style={style} className="text-xs font-normal">
@@ -136,7 +157,7 @@ export function renderTableElement(fieldValue: any, field: TableBodyColumn, data
             // 简单输出
             if (!fieldValue) return <span>-</span>
             // 可在此按需格式化
-            return <span>{formatDateTime(fieldValue, field.inputFormat||"YYYY-MM-DD")}</span>
+            return <span>{formatDateTime(fieldValue, field.inputFormat || "YYYY-MM-DD")}</span>
         }
 
         default: {
@@ -159,41 +180,45 @@ export function renderViewElement(fieldValue: any, field: DataField, dataTables:
     }
 }
 
-export function renderEditElement(
-    data: Record<string, any>,
-    field: DataField,
-    dataTables: Record<string, DataTable>,
-    onChange: (field:string, value: any) => void,
-    mappingDict?: MappingDict,
-) {
+interface RenderEditElementProps {
+    data: Record<string, any>;
+    field: DataField;
+    dataTables: Record<string, DataTable>;
+    onChange: (field: string, value: any) => void;
+    mappingDict?: MappingDict;
+}
+
+export function RenderEditElement({
+    data,
+    field,
+    dataTables,
+    onChange,
+    mappingDict,
+}: RenderEditElementProps) {
+    const { t } = useTranslation();
     const placeholder = field.label || field.id;
-    const fieldValue = data[field.id]
+    const fieldValue = data[field.id];
 
     let dictItems = field.source && mappingDict?.[field.source];
-    
+
     if (field.component === "select" && field.selectFilterBy && dictItems) {
-        const [filterName,filterKey] = field.selectFilterBy.split(":")
-        console.log("filterName",filterName)
-        console.log("filterKey",filterKey)
-        console.log(dictItems)
-        dictItems = { ...dictItems}
-        console.log(data)
-        dictItems.options = dictItems.options.filter((v) => v.fields && v.fields[filterKey] === data[filterName])
+        const [filterName, filterKey] = field.selectFilterBy.split(":");
+        dictItems = { ...dictItems };
+        dictItems.options = dictItems.options.filter((v) => v.fields && v.fields[filterKey] === data[filterName]);
         dictItems.items = dictItems.options.reduce((acc: Record<string, DictItem>, v) => {
-            acc[v.value] = v
-            return acc
-        }, {})
-        console.log(dictItems)
+            acc[v.value] = v;
+            return acc;
+        }, {});
     }
 
     if (field.component === "select" && field.multiple) {
-        const values = typeof fieldValue === "string" && fieldValue.length>0? fieldValue.split(",") : []
-        const values2: Option[] = values && values.length>0? values.map((v: string) => ({
+        const values = typeof fieldValue === "string" && fieldValue.length > 0 ? fieldValue.split(",") : [];
+        const values2: Option[] = values && values.length > 0 ? values.map((v: string) => ({
             value: v,
-            label: dictItems? dictItems.items[v].label || v : v
-        })):[]
-        const options: Option[] = dictItems && dictItems.options ?  dictItems.options.map((v) => ({ value: v.value, label: v.label})):[]
-       
+            label: dictItems && dictItems.items[v] ? dictItems.items[v].label || v : v
+        })) : [];
+        const options: Option[] = dictItems && dictItems.options ? dictItems.options.map((v) => ({ value: v.value, label: v.label })) : [];
+
         return (
             <MultipleSelector
                 key={field.id}
@@ -202,16 +227,15 @@ export function renderEditElement(
                 options={options}
                 placeholder={placeholder}
                 hidePlaceholderWhenSelected
-                emptyIndicator={<p className="text-center text-sm">没有内容</p>}
+                emptyIndicator={<p className="text-center text-sm">{t('components.viewComponent.noContent')}</p>}
                 onChange={(vals) => {
-                        onChange(field.id, vals&&vals.length>0? vals.map(val => val.value).join(","):"")
-                    } }
+                    onChange(field.id, vals && vals.length > 0 ? vals.map(val => val.value).join(",") : "");
+                }}
                 disabled={field.disabled}
             />
-                
-        )
-    } else if (field.component === "select" && field.searchable){
-        const options: SearchOption[] = dictItems && dictItems.options ? dictItems.options.map((v) => ({ value: v.value, label: v.label })) : []
+        );
+    } else if (field.component === "select" && field.searchable) {
+        const options: SearchOption[] = dictItems && dictItems.options ? dictItems.options.map((v) => ({ value: v.value, label: v.label })) : [];
 
         return (
             <SelectSearch
@@ -220,13 +244,12 @@ export function renderEditElement(
                 options={options}
                 placeholder={placeholder}
                 onChange={(value) => {
-                    onChange(field.id, value.value)
+                    onChange(field.id, value.value);
                 }}
                 disabled={false}
-                emptyIndicator={<p className="text-center text-sm">没有内容</p>}
+                emptyIndicator={<p className="text-center text-sm">{t('components.viewComponent.noContent')}</p>}
             />
-
-        )
+        );
     } else if (field.component === "select") {
         return (
             <Select key={field.id} value={fieldValue} onValueChange={(value) => onChange(field.id, value)} disabled={field.disabled}>
@@ -249,14 +272,16 @@ export function renderEditElement(
             return (
                 <Input
                     key={field.id}
+                    className="peer"
                     value={fieldValue || ""}
                     disabled={field.disabled}
                     placeholder={placeholder}
                     onChange={(e) => onChange(field.id, e.target.value)}
+                    aria-invalid
                 />
             );
         case "input-tag":
-            const values = typeof fieldValue === "string" ? fieldValue.split(",") : []
+            const values = typeof fieldValue === "string" ? fieldValue.split(",") : [];
             return (
                 <InputTag
                     key={field.id}
@@ -278,37 +303,54 @@ export function renderEditElement(
             );
         case "input-date":
             return (
-                <Input
+                <DatePicker
+                    className="*:not-first:mt-2"
                     key={field.id}
-                    type="date"
                     value={fieldValue || ""}
-                    disabled={field.disabled}
-                    placeholder={placeholder}
+                    isDisabled={field.disabled}
+                    placeholderValue={placeholder}
                     onChange={(value) => onChange(field.id, value)}
-                />
+                >
+                    <div className="flex">
+                        <Group className="w-full">
+                            <DateInput className="pe-9" />
+                        </Group>
+                        <Button className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                            <CalendarIcon size={16} />
+                        </Button>
+                    </div>
+                    <Popover
+                        className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95 data-[placement=bottom]:slide-in-from-top-2 data-[placement=left]:slide-in-from-right-2 data-[placement=right]:slide-in-from-left-2 data-[placement=top]:slide-in-from-bottom-2"
+                        offset={4}
+                    >
+                        <Dialog className="max-h-[inherit] overflow-auto p-2">
+                            <Calendar />
+                        </Dialog>
+                    </Popover>
+                </DatePicker>
             );
         case "input-number":
-            return (<NumberField key={field.id} value={fieldValue || ""}  isDisabled={field.disabled}  onChange={(value) => onChange(field.id, value)} >
-                <div className="*:not-first:mt-2">
-                   
-                    <Group className="border-input data-focus-within:border-ring data-focus-within:ring-ring/50 data-focus-within:has-aria-invalid:ring-destructive/20 dark:data-focus-within:has-aria-invalid:ring-destructive/40 data-focus-within:has-aria-invalid:border-destructive relative inline-flex h-9 w-full items-center overflow-hidden rounded-md border text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none data-disabled:opacity-50 data-focus-within:ring-[3px]">
-                        <Button
-                            slot="decrement"
-                            className="border-input bg-background text-muted-foreground/80 hover:bg-accent hover:text-foreground -ms-px flex aspect-square h-[inherit] items-center justify-center rounded-s-md border text-sm transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <MinusIcon size={16} aria-hidden="true" />
-                        </Button>
-                        <NumberInput className="bg-background text-foreground w-full grow px-3 py-2 text-center tabular-nums" />
-                        <Button
-                            slot="increment"
-                            className="border-input bg-background text-muted-foreground/80 hover:bg-accent hover:text-foreground -me-px flex aspect-square h-[inherit] items-center justify-center rounded-e-md border text-sm transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <PlusIcon size={16} aria-hidden="true" />
-                        </Button>
-                    </Group>
-                </div>
-               
-            </NumberField>)
+            return (
+                <NumberField key={field.id} value={fieldValue || ""} isDisabled={field.disabled} onChange={(value) => onChange(field.id, value)}>
+                    <div className="*:not-first:mt-2">
+                        <Group className="border-input data-focus-within:border-ring data-focus-within:ring-ring/50 data-focus-within:has-aria-invalid:ring-destructive/20 dark:data-focus-within:has-aria-invalid:ring-destructive/40 data-focus-within:has-aria-invalid:border-destructive relative inline-flex h-9 w-full items-center overflow-hidden rounded-md border text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none data-disabled:opacity-50 data-focus-within:ring-[3px]">
+                            <Button
+                                slot="decrement"
+                                className="border-input bg-background text-muted-foreground/80 hover:bg-accent hover:text-foreground -ms-px flex aspect-square h-[inherit] items-center justify-center rounded-s-md border text-sm transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <MinusIcon size={16} aria-hidden="true" />
+                            </Button>
+                            <NumberInput className="bg-background text-foreground w-full grow px-3 py-2 text-center tabular-nums" />
+                            <Button
+                                slot="increment"
+                                className="border-input bg-background text-muted-foreground/80 hover:bg-accent hover:text-foreground -me-px flex aspect-square h-[inherit] items-center justify-center rounded-e-md border text-sm transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <PlusIcon size={16} aria-hidden="true" />
+                            </Button>
+                        </Group>
+                    </div>
+                </NumberField>
+            );
         default:
             return (
                 <Input
@@ -320,4 +362,23 @@ export function renderEditElement(
                 />
             );
     }
+}
+
+// 保留原函数签名的包装器，用于向后兼容
+export function renderEditElement(
+    data: Record<string, any>,
+    field: DataField,
+    dataTables: Record<string, DataTable>,
+    onChange: (field: string, value: any) => void,
+    mappingDict?: MappingDict,
+) {
+    return (
+        <RenderEditElement
+            data={data}
+            field={field}
+            dataTables={dataTables}
+            onChange={onChange}
+            mappingDict={mappingDict}
+        />
+    );
 }

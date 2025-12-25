@@ -34,6 +34,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { useTranslation } from 'react-i18next';
+
 
 export interface IFilterBar {
     object: string;
@@ -54,49 +56,8 @@ enum typeEnum {
     DATE = 'date',
 }
 
-const typeOprMap: Record<typeEnum, Option[]> = {
-    [typeEnum.STRING]: [
-        // { label: '开头是', value: 'begin-with' },
-        // { label: '开头不是', value: 'not-begin-with' },
-        // { label: '结尾是', value: 'end-with' },
-        // { label: '结尾不是', value: 'not-end-with' },
-        { label: '模糊匹配', value: 'like' },
-        { label: '等于', value: '=' },
-        { label: '不等于', value: '<>' },
-        { label: '为空', value: 'is-null' },
-        { label: '不为空', value: 'is-not-null' },
-    ],
-    [typeEnum.NUMBER]: [
-        { label: '等于', value: '=' },
-        { label: '不等于', value: '<>' },
-        { label: '大于', value: '>' },
-        { label: '小于', value: '<' },
-        { label: '大于等于', value: '>=' },
-        { label: '小于等于', value: '<=' },
-        { label: '介于', value: '-' },
-        { label: '为空', value: 'is-null' },
-        { label: '不为空', value: 'is-not-null' },
-    ],
-    [typeEnum.SELECT]: [
-        { label: '包含', value: 'in' },
-        { label: '不包含', value: 'not-in' },
-        { label: '为空', value: 'is-null' },
-        { label: '不为空', value: 'is-not-null' },
-    ],
-    [typeEnum.DATE]: [
-        { label: '等于', value: '=' },
-        { label: '大于', value: '>' },
-        { label: '小于', value: '<' },
-        { label: '大于等于', value: '>=' },
-        { label: '小于等于', value: '<=' },
-        { label: '介于', value: '-' },
-        { label: '为空', value: 'is-null' },
-        { label: '不为空', value: 'is-not-null' },
-    ],
-};
-
 const componentTypeMap: any = {
-    "input-text": {type:typeEnum.STRING, defaultValue:'like'},
+    "input-text": { type: typeEnum.STRING, defaultValue: 'like' },
     "input-date": { type: typeEnum.DATE, defaultValue: '=' },
     "input-number": { type: typeEnum.NUMBER, defaultValue: '=' },
     "textarea": { type: typeEnum.STRING, defaultValue: 'like' },
@@ -108,7 +69,7 @@ interface FilterItem {
     key: string
     type: typeEnum
     type_value: string
-    value: string[]|string|number
+    value: string[] | string | number
 }
 
 
@@ -117,11 +78,55 @@ interface FilterParam {
     items: FilterItem[]
 }
 
-export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }: ViewComponentProps&React.ComponentProps<"div">) {
+// 将 typeOprMap 移到组件内部或使用 hook 来获取翻译后的选项
+function useTypeOprMap() {
+    const { t } = useTranslation();
+
+    return {
+        [typeEnum.STRING]: [
+            { label: t('components.filterBar.operators.like'), value: 'like' },
+            { label: t('components.filterBar.operators.equals'), value: '=' },
+            { label: t('components.filterBar.operators.notEquals'), value: '<>' },
+            { label: t('components.filterBar.operators.isNull'), value: 'is-null' },
+            { label: t('components.filterBar.operators.isNotNull'), value: 'is-not-null' },
+        ],
+        [typeEnum.NUMBER]: [
+            { label: t('components.filterBar.operators.equals'), value: '=' },
+            { label: t('components.filterBar.operators.notEquals'), value: '<>' },
+            { label: t('components.filterBar.operators.greaterThan'), value: '>' },
+            { label: t('components.filterBar.operators.lessThan'), value: '<' },
+            { label: t('components.filterBar.operators.greaterThanOrEquals'), value: '>=' },
+            { label: t('components.filterBar.operators.lessThanOrEquals'), value: '<=' },
+            { label: t('components.filterBar.operators.between'), value: '-' },
+            { label: t('components.filterBar.operators.isNull'), value: 'is-null' },
+            { label: t('components.filterBar.operators.isNotNull'), value: 'is-not-null' },
+        ],
+        [typeEnum.SELECT]: [
+            { label: t('components.filterBar.operators.contains'), value: 'in' },
+            { label: t('components.filterBar.operators.notContains'), value: 'not-in' },
+            { label: t('components.filterBar.operators.isNull'), value: 'is-null' },
+            { label: t('components.filterBar.operators.isNotNull'), value: 'is-not-null' },
+        ],
+        [typeEnum.DATE]: [
+            { label: t('components.filterBar.operators.equals'), value: '=' },
+            { label: t('components.filterBar.operators.greaterThan'), value: '>' },
+            { label: t('components.filterBar.operators.lessThan'), value: '<' },
+            { label: t('components.filterBar.operators.greaterThanOrEquals'), value: '>=' },
+            { label: t('components.filterBar.operators.lessThanOrEquals'), value: '<=' },
+            { label: t('components.filterBar.operators.between'), value: '-' },
+            { label: t('components.filterBar.operators.isNull'), value: 'is-null' },
+            { label: t('components.filterBar.operators.isNotNull'), value: 'is-not-null' },
+        ],
+    };
+}
+
+export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }: ViewComponentProps & React.ComponentProps<"div">) {
     const ctx = useContext(PageModelContext);
     const pageViewCtx = useContext(PageViewContext);
     if (!ctx) throw new Error("must be used within PageModelProvider");
     if (!pageViewCtx) throw new Error("must be used within PageViewProvider");
+    const { t } = useTranslation();
+    const typeOprMap = useTypeOprMap();
 
     const urlParams = useParams();
     const urlVars: Record<string, string> = {}
@@ -149,7 +154,7 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
     let filterOpsInit: Record<string, string> = {}
     filterComps.forEach((item) => {
         filterOpsInit[item.id] = item.filterOps || '='
-        if (componentTypeMap[item.component]){
+        if (componentTypeMap[item.component]) {
             filterOpsInit[item.id] = componentTypeMap[item.component].defaultValue
             if (item.filterOps) {
                 const fieldOprs = item.filterOps.split(',')
@@ -176,7 +181,7 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
     const [filterValues, setFilterValues] = useState<Record<string, any>>({})
 
     const handleRemoveDynamic = (fieldId: string) => {
-        setFilters((prev) => prev.filter((v)=>v != fieldId))
+        setFilters((prev) => prev.filter((v) => v != fieldId))
     }
 
     const handleValueChange = (id: string, value: any) => {
@@ -209,15 +214,15 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
         }
         const oper = operations[vo.onQuery]
         if (!oper) {
-            toast.error('No operation found for id: ' + vo.onQuery)
+            toast.error(t('components.filterBar.errors.noOperation', { id: vo.onQuery }))
             return
         }
 
-        let filterParams: FilterParam = {opr:"and", items: []}
+        let filterParams: FilterParam = { opr: "and", items: [] }
         Object.keys(filterValues).forEach((k) => {
             const val = filterValues[k]
-            let componentType = componentTypeMap[fields.get(k)?.component].type||"string"
-           
+            let componentType = componentTypeMap[fields.get(k)?.component].type || "string"
+
             if (val) {
                 let paraVal = null
                 if (Array.isArray(val)) {
@@ -234,7 +239,7 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
                     type_value: filterOps[k],
                     value: paraVal
                 })
-                
+
             }
 
         })
@@ -250,7 +255,7 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
         }
         const oper = operations[vo.onQuery]
         if (!oper) {
-            toast.error('No operation found for id: ' + vo.onQuery)
+            toast.error(t('components.filterBar.errors.noOperation', { id: vo.onQuery }))
             return
         }
 
@@ -259,13 +264,13 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
     function renderFilterItem(id: string, idx: number) {
         const fieldDef = filterComps.get(id)
         if (!fieldDef) return null
-        
+
         const isDynamic = !!fieldDef.dynamic
         const dictItems = fieldDef.source && dict?.[fieldDef.source]
         // 组装下拉选项
         const options: Option[] = dictItems && dictItems.options ? dictItems.options.map((v) => ({ value: v.value, label: v.label })) : []
         const fieldOprs = fieldDef.filterOps ? fieldDef.filterOps.split(',') : []
-        
+
         // 简化仅示例 input-text / select
         if (fieldDef.component === "select") {
             // 多选
@@ -279,22 +284,24 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
                         options={options}
                         placeholder={fieldDef.label}
                         hidePlaceholderWhenSelected
-                        emptyIndicator={<p className="text-center text-sm">没有内容</p>}
+                        emptyIndicator={<p className="text-center text-sm">{t('components.filterBar.noContent')}</p>}
                         onChange={(vals) => handleValueChange(fieldDef.id, vals)}
                     />
                     {isDynamic && (
                         <Button
                             variant="outline"
-                            size="icon" 
+                            size="icon"
                             onClick={() => handleRemoveDynamic(fieldDef.id)}
                             className="bg-[#eeeeee] hover:bg-[#e5e7eb] w-4"
+                            aria-label={t('components.filterBar.removeFilter')}
+                            title={t('components.filterBar.removeFilter')}
                         >
                             <RiCloseLine className="h-4 w-4" />
                         </Button>
                     )}
                 </ButtonGroup>
             )
-        } 
+        }
 
         const opOptions: Option[] = typeOprMap[componentTypeMap[fieldDef.component].type].filter((v) => fieldOprs.includes('all') || fieldOprs.includes(v.value))
         // 文本框
@@ -302,7 +309,7 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
         return (
             <ButtonGroup key={fieldDef.id}>
                 <InputGroup>
-                    {opOptions.length>1 && (
+                    {opOptions.length > 1 && (
                         <Select
                             value={filterOps[fieldDef.id]}
                             onValueChange={(v) => {
@@ -324,29 +331,31 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
                             </SelectContent>
                         </Select>
                     )}
-                    <InputGroupInput 
-                        placeholder={fieldDef.label} 
-                        value={textValue} 
-                        onChange={(e) => handleValueChange(fieldDef.id, e.target.value)} 
+                    <InputGroupInput
+                        placeholder={fieldDef.label}
+                        value={textValue}
+                        onChange={(e) => handleValueChange(fieldDef.id, e.target.value)}
                     />
                     <InputGroupAddon align="inline-end">
                         <InputGroupButton
-                            aria-label="清除"
-                            title="清除"
+                            aria-label={t('components.filterBar.clear')}
+                            title={t('components.filterBar.clear')}
                             size="icon-xs"
-                            onClick={()=>{handleValueChange(fieldDef.id, "")}}
+                            onClick={() => { handleValueChange(fieldDef.id, "") }}
                         >
                             {textValue && <XIcon />}
                         </InputGroupButton>
                     </InputGroupAddon>
                 </InputGroup>
-              
+
                 {isDynamic && (
                     <Button
                         variant="outline"
-                        size="icon" 
+                        size="icon"
                         onClick={() => handleRemoveDynamic(fieldDef.id)}
                         className=" bg-[#eeeeee] hover:bg-[#e5e7eb]  w-4"
+                        aria-label={t('components.filterBar.removeFilter')}
+                        title={t('components.filterBar.removeFilter')}
                     >
                         <RiCloseLine className="h-4 w-4" />
                     </Button>
@@ -363,8 +372,13 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
                 <ButtonGroup className="hidden sm:flex">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" >
-                                <RiFilter3Line/>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t('components.filterBar.addFilter')}
+                                title={t('components.filterBar.addFilter')}
+                            >
+                                <RiFilter3Line />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent sideOffset={0} align="end">
@@ -383,15 +397,21 @@ export function FilterBar({ id, vo, dataTables, operations, dict, dataTableId }:
                             })}
                         </DropdownMenuContent>
                     </DropdownMenu>
-            </ButtonGroup>
-            <ButtonGroup>
-                <Button className="text-sm rounded-sm" onClick={handleSearch} >
-                    <RiSearchLine/> 查询
-                </Button>
-                <Button variant="outline" size="icon" onClick={handleReset}>
-                    <RiResetLeftLine/>
-                </Button>
-            </ButtonGroup>
+                </ButtonGroup>
+                <ButtonGroup>
+                    <Button className="text-sm rounded-sm" onClick={handleSearch} >
+                        <RiSearchLine /> {t("components.button.search")}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleReset}
+                        aria-label={t('components.button.reset')}
+                        title={t('components.button.reset')}
+                    >
+                        <RiResetLeftLine />
+                    </Button>
+                </ButtonGroup>
             </ButtonGroup>
         </div>
     )

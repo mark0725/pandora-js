@@ -3,6 +3,7 @@ import { ViewObject} from "@/types"
 import { TablePageView } from "@/components/blocks/table-page-view"
 import { FormPageView } from "@/components/blocks/form-page-view"
 import { DashboardPageView } from "@/components/blocks/dashboard-page-view"
+import { NavCardBoardView } from "@/components/blocks/nav-board"
 import { DrawerView  } from "@/components/blocks/drawer-view"
 import { DialogView  } from "@/components/blocks/dialog-view"
 import { Chart } from "@/components/blocks/chart"
@@ -93,6 +94,7 @@ const componentsRegistry: Record<string, React.ElementType> = {
     FilterBar,
     SplitContainer,
     DashboardView: DashboardPageView,
+    NavCardBoardView: NavCardBoardView,
     Tab,
     VBox,
     HBox,

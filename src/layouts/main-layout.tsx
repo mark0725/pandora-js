@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useLocation, useNavigate, useParams, Outlet } from "react-router-dom"
 import { getIcon } from "@/components/icons/dynamic-icon"
+import { useTranslation } from "react-i18next"
 
 
 interface MainLayoutProps {
@@ -30,6 +31,7 @@ interface MainLayoutProps {
 
 export function MainLayout(props: MainLayoutProps) {
     const { app, user, menu } = props
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const params = useParams<{ menuId?: string }>()
     const { menuId } = params
@@ -38,10 +40,10 @@ export function MainLayout(props: MainLayoutProps) {
     const mainRef = useRef(null);
     const navRef = useRef(null)
     // 将所有菜单合并，便于后续查找
-  
+
     // 点击菜单时修改路由
     function handleMainMenuClick(item: MenuItem) {
-        if(!item.id) {
+        if (!item.id) {
             return
         }
         if (item.view === 'drawer') {
@@ -131,10 +133,9 @@ export function MainLayout(props: MainLayoutProps) {
                                                 : "")
                                         }
                                         onClick={() => handleMainMenuClick(item)}
-                                        aria-label="Notifications"
+                                        aria-label={t("layout.notifications")}
                                     >
                                         {renderMenuIcon(item)}
-                                        {/* <BellIcon size={16} aria-hidden="true" /> */}
                                         {item.count && item.count > 0 && (
                                             <Badge className="absolute -top-1 left-full min-w-4 h-4 text-xxs bg-red-500 -translate-x-1/2 px-0.8">
                                                 {item.count > 99 ? "99+" : item.count}
@@ -146,18 +147,18 @@ export function MainLayout(props: MainLayoutProps) {
                                             </span>
                                         )}
                                     </button>
-                                   
+
                                 </TooltipTrigger>
                                 <TooltipContent side={"right"}>{item.title}</TooltipContent>
                             </Tooltip>
                         )
                     })}
                     {
-                    user && (<div className="p-2">
+                        user && (<div className="p-2">
                             <UserMenu userName={user.name} userMail={user.mail} avatar={user.avatar} userItems={menu.navuser} />
-                    </div>)
+                        </div>)
                     }
-                    
+
                 </div>
             </aside>
             <main ref={mainRef} className="relative flex flex-1 h-full w-full min-h-0 bg-gray-50  overflow-hidden">
@@ -171,26 +172,26 @@ export function MainLayout(props: MainLayoutProps) {
                     <DrawerContent className="z-49 flex-1 absolute h-full rounded-none overflow-hidden">
                         <DrawerHeader className="flex flex-row p-1 justify-between">
                             <div className="p-2">
-                                <DrawerTitle>标题</DrawerTitle>
-                                <DrawerDescription>副标题</DrawerDescription>
+                                <DrawerTitle>{t("layout.drawer.title")}</DrawerTitle>
+                                <DrawerDescription>{t("layout.drawer.subtitle")}</DrawerDescription>
                             </div>
-                           <div>
-                            <DrawerClose asChild>
-                                <Button variant="ghost" size="icon"><RiCloseLine className="mr-0 h-4 w-4" /></Button>
-                            </DrawerClose>
-                           </div>
-                            
+                            <div>
+                                <DrawerClose asChild>
+                                    <Button variant="ghost" size="icon"><RiCloseLine className="mr-0 h-4 w-4" /></Button>
+                                </DrawerClose>
+                            </div>
+
                         </DrawerHeader>
                         <DrawerFooter>
-                            <Button>确认</Button>
-                            
+                            <Button>{t("layout.drawer.confirm")}</Button>
+
                         </DrawerFooter>
                     </DrawerContent>
                 </Drawer>
                 <div className="flex-1 h-full w-full overflow-hidden">
                     <Outlet />
                 </div>
-               
+
             </main>
         </div>
     )

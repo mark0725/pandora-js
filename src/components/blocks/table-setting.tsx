@@ -30,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useTranslation } from "react-i18next"
 
 function SortableItem({ id, label }: { id: string; label: string }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id })
@@ -55,9 +56,10 @@ function SortableItem({ id, label }: { id: string; label: string }) {
 }
 
 export function TableSetting({ dataTable, dataTables, mappingDict }: { dataTable: string, dataTables: Record<string, DataTable>, mappingDict?: MappingDict }) {
-    const [rowHeight, setRowHeight] = useState<string>("常规")
-    const [fontSize, setFontSize] = useState<string>("中")
-    const [columnWidthMode, setColumnWidthMode] = useState<string>("自动")
+    const { t } = useTranslation()
+    const [rowHeight, setRowHeight] = useState<string>("normal")
+    const [fontSize, setFontSize] = useState<string>("medium")
+    const [columnWidthMode, setColumnWidthMode] = useState<string>("auto")
 
     const dt = dataTables[dataTable]
     const columns = dt?.fields || []
@@ -83,14 +85,14 @@ export function TableSetting({ dataTable, dataTables, mappingDict }: { dataTable
     return (
         <Tabs defaultValue="table-setting" className="items-center">
             <TabsList>
-                <TabsTrigger value="table-setting">表格选项</TabsTrigger>
-                <TabsTrigger value="column-setting">列选项</TabsTrigger>
+                <TabsTrigger value="table-setting">{t('components.tableSetting.tabs.tableOptions')}</TabsTrigger>
+                <TabsTrigger value="column-setting">{t('components.tableSetting.tabs.columnOptions')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="table-setting">
                 <div className="p-2 space-y-4">
                     <div className="flex items-center space-x-2">
-                        <Label className="w-[80px]">行高</Label>
+                        <Label className="w-[80px]">{t('components.tableSetting.rowHeight.label')}</Label>
                         <Select
                             value={rowHeight}
                             onValueChange={(v) => setRowHeight(v)}
@@ -99,15 +101,15 @@ export function TableSetting({ dataTable, dataTables, mappingDict }: { dataTable
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="窄">窄</SelectItem>
-                                <SelectItem value="常规">常规</SelectItem>
-                                <SelectItem value="宽">宽</SelectItem>
+                                <SelectItem value="narrow">{t('components.tableSetting.rowHeight.narrow')}</SelectItem>
+                                <SelectItem value="normal">{t('components.tableSetting.rowHeight.normal')}</SelectItem>
+                                <SelectItem value="wide">{t('components.tableSetting.rowHeight.wide')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="flex items-center space-x-2">
-                        <Label className="w-[80px]">字体</Label>
+                        <Label className="w-[80px]">{t('components.tableSetting.fontSize.label')}</Label>
                         <Select
                             value={fontSize}
                             onValueChange={(v) => setFontSize(v)}
@@ -116,16 +118,16 @@ export function TableSetting({ dataTable, dataTables, mappingDict }: { dataTable
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="小">小</SelectItem>
-                                <SelectItem value="中">中</SelectItem>
-                                <SelectItem value="大">大</SelectItem>
-                                <SelectItem value="超大">超大</SelectItem>
+                                <SelectItem value="small">{t('components.tableSetting.fontSize.small')}</SelectItem>
+                                <SelectItem value="medium">{t('components.tableSetting.fontSize.medium')}</SelectItem>
+                                <SelectItem value="large">{t('components.tableSetting.fontSize.large')}</SelectItem>
+                                <SelectItem value="extraLarge">{t('components.tableSetting.fontSize.extraLarge')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="flex items-center space-x-2">
-                        <Label className="w-[80px]">列宽</Label>
+                        <Label className="w-[80px]">{t('components.tableSetting.columnWidth.label')}</Label>
                         <Select
                             value={columnWidthMode}
                             onValueChange={(v) => setColumnWidthMode(v)}
@@ -134,8 +136,8 @@ export function TableSetting({ dataTable, dataTables, mappingDict }: { dataTable
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="自动">自动</SelectItem>
-                                <SelectItem value="固定">固定</SelectItem>
+                                <SelectItem value="auto">{t('components.tableSetting.columnWidth.auto')}</SelectItem>
+                                <SelectItem value="fixed">{t('components.tableSetting.columnWidth.fixed')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -145,7 +147,7 @@ export function TableSetting({ dataTable, dataTables, mappingDict }: { dataTable
             <TabsContent value="column-setting" >
                 <div className="p-2 text-sm">
                     <p className="text-muted-foreground text-xs mb-2">
-                        拖动可调整列顺序，开关可控制是否显示列
+                        {t('components.tableSetting.columnSetting.hint')}
                     </p>
                     <DndContext
                         sensors={sensors}
