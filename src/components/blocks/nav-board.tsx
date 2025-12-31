@@ -142,6 +142,7 @@ export function NavCardBoardView({ id, vo, dataTables, operations }: ViewCompone
     groups.push({
       id: item.value,
       title: item.label,
+      count: 0,
     })
   })
 
@@ -167,9 +168,15 @@ export function NavCardBoardView({ id, vo, dataTables, operations }: ViewCompone
       labels: labels,
       actions: [{ text: t('components.navBoard.viewDetails'), action: { type: 'view' } }],
     })
+   
+    groups.map(group => {
+      if (group.id === item[itemCfg.group]) {
+        group.count++
+      }
+    })
   })
 
-
+  groups.sort((a, b) => b.count - a.count)
   return (
     <div className="w-full h-screen">
 
